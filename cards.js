@@ -10,7 +10,8 @@
 //   4. Click "Commit changes". Wait 1-2 minutes, then refresh the site.
 //
 // money = dollars (use - for a cost)   happy = Happiness   health = Health
-// SAFE TO CHANGE: title, text, money, happy, health
+// SAFE TO CHANGE: title, text, money, happy, health, and the health plan "pay" shares
+// Medical bills: "money" is the FULL bill before insurance.
 // DON'T CHANGE:   id, cat, kind, when (the odds on each card come from these)
 // Need a quote mark inside your text? Use a single quote ' instead.
 //
@@ -18,21 +19,29 @@
 // list, so they stay correct if you add or remove Life Events.
 // Add or delete cards only between rounds, never mid-round.
 // =====================================================================
- 
+
 window.CARDS = {
 "rounds": 8,
 "categories": ["Medical", "Transportation", "Job", "Home", "Money & Scams", "Family & Friends"],
- 
+
+// Health plans from each student's job. "pay" = the share of a Medical bill the student pays.
+// Medical bill cards (marked "bill": true) show the full bill, and students pay their plan's share.
+"healthPlans": [
+  {"name": "Basic", "pay": 0.30},
+  {"name": "Standard", "pay": 0.10},
+  {"name": "Premium", "pay": 0.02}
+],
+
 // ---------------- LIFE EVENTS (kind: bad = costs you, good = helps you) ----------------
 "life": [
-  {"id": "MED-1", "cat": "Medical", "kind": "bad", "title": "Flu knocks you out", "text": "You're sick in bed for three days. You pay for a doctor visit and medicine.", "money": -60, "happy": -1, "health": -2},
-  {"id": "MED-2", "cat": "Medical", "kind": "bad", "title": "Urgent care visit", "text": "A bad sinus infection sends you to urgent care.", "money": -75, "happy": 0, "health": -1},
-  {"id": "MED-3", "cat": "Medical", "kind": "bad", "title": "Sprained ankle", "text": "You slip on wet stairs. Urgent care, an X-ray and a brace.", "money": -180, "happy": 0, "health": -2},
-  {"id": "MED-4", "cat": "Medical", "kind": "bad", "title": "Emergency room", "text": "Sharp stomach pain at night. You spend hours in the ER at PeaceHealth Southwest.", "money": -600, "happy": -1, "health": -2},
-  {"id": "MED-5", "cat": "Medical", "kind": "bad", "title": "Cavity", "text": "The dentist finds a cavity that needs a filling.", "money": -150, "happy": 0, "health": -1},
-  {"id": "MED-6", "cat": "Medical", "kind": "bad", "title": "Broken glasses", "text": "Your glasses snap and you need a new pair to see at work.", "money": -180, "happy": -1, "health": 0},
-  {"id": "MED-7", "cat": "Medical", "kind": "bad", "title": "Prescription price jump", "text": "Your regular medicine costs more this month.", "money": -90, "happy": 0, "health": 0},
-  {"id": "MED-8", "cat": "Medical", "kind": "bad", "title": "Wildfire smoke week", "text": "Smoke fills the air. You buy an air purifier and still get headaches.", "money": -90, "happy": 0, "health": -1},
+  {"id": "MED-1", "cat": "Medical", "kind": "bad", "title": "Flu knocks you out", "text": "You're sick in bed for three days. Doctor visit and medicine.", "money": -250, "happy": -1, "health": -2, "bill": true},
+  {"id": "MED-2", "cat": "Medical", "kind": "bad", "title": "Urgent care visit", "text": "A bad sinus infection sends you to urgent care.", "money": -300, "happy": 0, "health": -1, "bill": true},
+  {"id": "MED-3", "cat": "Medical", "kind": "bad", "title": "Sprained ankle", "text": "You slip on wet stairs. Urgent care, an X-ray and a brace.", "money": -900, "happy": 0, "health": -2, "bill": true},
+  {"id": "MED-4", "cat": "Medical", "kind": "bad", "title": "Emergency room", "text": "Sharp stomach pain at night. You spend hours in the ER at PeaceHealth Southwest.", "money": -3000, "happy": -1, "health": -2, "bill": true},
+  {"id": "MED-5", "cat": "Medical", "kind": "bad", "title": "Cavity", "text": "The dentist finds a cavity that needs a filling.", "money": -250, "happy": 0, "health": -1, "bill": true},
+  {"id": "MED-6", "cat": "Medical", "kind": "bad", "title": "Broken glasses", "text": "Your glasses snap. New eye exam and glasses.", "money": -300, "happy": -1, "health": 0, "bill": true},
+  {"id": "MED-7", "cat": "Medical", "kind": "bad", "title": "New prescription", "text": "Your doctor prescribes a medicine you need for a month.", "money": -200, "happy": 0, "health": 0, "bill": true},
+  {"id": "MED-8", "cat": "Medical", "kind": "bad", "title": "Smoke-season asthma", "text": "Wildfire smoke sets off your asthma. Doctor visit and an inhaler.", "money": -350, "happy": 0, "health": -1, "bill": true},
   {"id": "MED-9", "cat": "Medical", "kind": "good", "title": "Clean checkup", "text": "Your yearly checkup goes great.", "money": 0, "happy": 0, "health": 2},
   {"id": "MED-10", "cat": "Medical", "kind": "good", "title": "Free flu shot at work", "text": "Your job offers free flu shots.", "money": 0, "happy": 1, "health": 1},
   {"id": "MED-11", "cat": "Medical", "kind": "good", "title": "Daily walks", "text": "You start walking after work every day.", "money": 0, "happy": 1, "health": 2},
@@ -86,23 +95,23 @@ window.CARDS = {
   {"id": "FAM-7", "cat": "Family & Friends", "kind": "good", "title": "Old friends reunion", "text": "Dinner with your high school crew.", "money": -40, "happy": 3, "health": 0},
   {"id": "FAM-8", "cat": "Family & Friends", "kind": "good", "title": "Volunteer day", "text": "You help sort food at the Clark County Food Bank.", "money": 0, "happy": 2, "health": 1}
 ],
- 
+
 // ---------------- PROTECTION (covers one category's bad events, lasts all game) ----------------
 "protect": [
-  {"id": "P1", "title": "Health insurance", "cat": "Medical", "text": "When you draw a Medical bill, you pay only $50 of it. Write what you saved in Protection Card Used."},
-  {"id": "P2", "title": "Urgent care plan", "cat": "Medical", "text": "When you draw a Medical bill, it costs $100 less and you lose no Health."},
-  {"id": "P3", "title": "Car or ride insurance", "cat": "Transportation", "text": "When you draw a Transportation bill, you pay only $100 of it."},
-  {"id": "P4", "title": "Roadside help", "cat": "Transportation", "text": "When you draw a Transportation bill, it costs $150 less and you lose no Happiness."},
-  {"id": "P5", "title": "Emergency fund", "cat": "Job", "text": "When you draw a Job setback, it costs half as much."},
-  {"id": "P6", "title": "Backup skills", "cat": "Job", "text": "When you draw a Job setback, it costs $200 less."},
-  {"id": "P7", "title": "Renters insurance", "cat": "Home", "text": "When you draw a Home problem, you pay only $100 of it."},
-  {"id": "P8", "title": "Roommate agreement", "cat": "Home", "text": "When you draw a Home problem, it costs $150 less and you lose no Happiness."},
-  {"id": "P9", "title": "Two-step login", "cat": "Money & Scams", "text": "When you draw a Money & Scams problem, it costs $0."},
-  {"id": "P10", "title": "Phone protection plan", "cat": "Money & Scams", "text": "When you draw a Money & Scams problem, it costs $100 less."},
-  {"id": "P11", "title": "Family savings jar", "cat": "Family & Friends", "text": "When you draw a Family & Friends cost, it costs $150 less."},
-  {"id": "P12", "title": "Support network", "cat": "Family & Friends", "text": "When you draw a Family & Friends card, you lose no Happiness."}
+  {"id": "P1", "title": "Car or ride insurance", "cat": "Transportation", "text": "When you draw a Transportation bill, you pay only $100 of it."},
+  {"id": "P2", "title": "Roadside help", "cat": "Transportation", "text": "When you draw a Transportation bill, it costs $150 less and you lose no Happiness."},
+  {"id": "P3", "title": "Emergency fund", "cat": "Job", "text": "When you draw a Job setback, it costs half as much."},
+  {"id": "P4", "title": "Backup skills", "cat": "Job", "text": "When you draw a Job setback, it costs $200 less."},
+  {"id": "P5", "title": "Renters insurance", "cat": "Home", "text": "When you draw a Home problem, you pay only $100 of it."},
+  {"id": "P6", "title": "Roommate agreement", "cat": "Home", "text": "When you draw a Home problem, it costs $150 less and you lose no Happiness."},
+  {"id": "P7", "title": "Two-step login", "cat": "Money & Scams", "text": "When you draw a Money & Scams problem, it costs $0."},
+  {"id": "P8", "title": "Phone protection plan", "cat": "Money & Scams", "text": "When you draw a Money & Scams problem, it costs $100 less."},
+  {"id": "P9", "title": "Family savings jar", "cat": "Family & Friends", "text": "When you draw a Family & Friends cost, it costs $150 less."},
+  {"id": "P10", "title": "Support network", "cat": "Family & Friends", "text": "When you draw a Family & Friends card, you lose no Happiness."},
+  {"id": "P11", "title": "Paycheck buffer", "cat": "Job", "text": "When you draw a Job setback, you lose no Happiness and it costs $100 less."},
+  {"id": "P12", "title": "Transit backup pass", "cat": "Transportation", "text": "When you draw a Transportation bill, it costs $100 less."}
 ],
- 
+
 // ---------------- KEEP (lasts all game: "every" = every round, or only when a matching Life Event is drawn) ----------------
 "keep": [
   {"id": "K1", "title": "Meal prep habit", "text": "Cooking ahead saves money every week.", "money": 40, "happy": 0, "health": 0, "when": "every"},
@@ -118,7 +127,7 @@ window.CARDS = {
   {"id": "K11", "title": "Stress plan", "text": "When you draw any bad Life Event, journaling or music helps you bounce back.", "money": 0, "happy": 1, "health": 0, "when": {"cat": "Any", "kind": "bad"}},
   {"id": "K12", "title": "First-aid kit", "text": "When you draw a Medical bill, you recover faster.", "money": 0, "happy": 0, "health": 1, "when": {"cat": "Medical", "kind": "bad"}}
 ],
- 
+
 // ---------------- USE NOW (one time, this round) ----------------
 "use": [
   {"id": "U1", "title": "Extra shift", "text": "You pick up an extra shift.", "money": 180, "happy": 0, "health": -1},
