@@ -86,6 +86,7 @@ td.kept{font-weight:700}
   <header class="top">
     <div class="brand">
       <h1>Card Shuffler</h1>
+      <label class="chip" id="periodWrap" style="display:flex;gap:6px;align-items:center">Period <select id="periodSel" aria-label="Class period" style="font:inherit;border:0;background:transparent;color:inherit"></select></label>
       <span class="chip" id="classChip">Class: not set</span>
       <span class="chip" id="roundChip">Round 1</span>
     </div>
@@ -153,6 +154,9 @@ td.kept{font-weight:700}
   <section id="view-setup" class="cols" hidden>
     <div class="panel">
       <h2>Class setup</h2>
+      <div class="row"><label class="field" style="flex:1">Period name<input id="tLabel" autocomplete="off" placeholder="e.g. Period 1"></label></div>
+      <div class="row"><button class="btn ghost small" id="addPeriod" type="button">+ Add a period</button><button class="btn ghost small" id="delPeriod" type="button">Delete this period</button></div>
+      <p class="note" id="delNote"></p>
       <label class="field">Class code (students type this; a new one per period)<input id="tClass" autocomplete="off" placeholder="e.g. P1-S1"></label>
       <label class="field">Current round<select id="tRound"></select></label>
       <label class="field">Life Event deck<select id="tTheme"></select></label>
@@ -168,6 +172,7 @@ td.kept{font-weight:700}
         <li><b>Students can draw themselves</b>: share this page's link with <code>#student</code> on the end. They type the class code, their name and the round.</li>
         <li><b>The draws always match.</b> They're calculated from the class code, the name and the round, so refreshing never gives a new card.</li>
         <li><b>In the News</b> is one card per round for the whole class.</li>
+        <li><b>Two or more periods?</b> Click <b>+ Add a period</b> and give each its own class code and roster. Switch periods with the Period menu at the top. Each period keeps its own round, deck and log.</li>
         <li><b>Record on the tracker as usual:</b> Life Event in "Life Event", a Use Now card in "Use now Card", and Keep or Protection cards in their rows.</li>
       </ol>
       <p class="note">The Life Event deck can be Mixed (all themes) or one theme, like Credit or Smart Buyer, to match the week's lesson. Students pick the same deck you announce.</p>
@@ -252,10 +257,17 @@ function diceEl(cls, name, round, opts){
 }
 
 // ---------- state ----------
-let state = { cls: store.get("cls",""), round: store.get("round",1), theme: store.get("theme",0), roster: store.get("roster",[]), log: store.get("log",{}) };
+let periods = store.get("periods", null);
+if(!Array.isArray(periods) || !periods.length){
+  periods = [{ label: "Period 1", cls: store.get("cls",""), round: store.get("round",1), theme: store.get("theme",0), roster: store.get("roster",[]), log: store.get("log",{}) }];
+}
+let active = Math.min(store.get("active",0), periods.length-1);
+let state = periods[active];
+function savePeriods(){ store.set("periods", periods); store.set("active", active); }
+function newPeriod(){ return { label: "Period " + (periods.length+1), cls: "", round: 1, theme: 0, roster: [], log: {} }; }
 let current = null, revealed = false;
 const studentOnly = location.hash === "#student";
-function saveLog(){ store.set("log", state.log); }
+function saveLog(){ savePeriods(); }
 function logEntry(round, name){ const k = String(round); state.log[k] = state.log[k] || {}; state.log[k][name] = state.log[k][name] || {}; return state.log[k][name]; }
 
 function renderHeader(){
@@ -263,7 +275,7 @@ function renderHeader(){
   $("#roundChip").textContent = "Round " + state.round + " · " + THEMES[state.theme];
   $("#roundTitle").textContent = "Round " + state.round;
 }
-function setRound(r){ state.round = Math.max(1, Math.min(MAX_ROUND, r)); store.set("round", state.round); $("#tRound").value = state.round; current = null; renderAll(); }
+function setRound(r){ state.round = Math.max(1, Math.min(MAX_ROUND, r)); savePeriods(); $("#tRound").value = state.round; current = null; renderAll(); }
 
 function renderRoster(){
   const box = $("#roster"); box.textContent = "";
@@ -357,10 +369,21 @@ function showTab(t){
 }
 function renderAll(){ renderHeader(); renderRoster(); renderTurn(); renderNews(false); renderLog(); }
 
+function fillPeriodSel(){
+  const sel = $("#periodSel"); sel.textContent = "";
+  periods.forEach((p,i)=> sel.append(el("option",{value:String(i),text:p.label || ("Period "+(i+1))})));
+  sel.value = String(active);
+}
+function loadSetupFields(){
+  $("#tLabel").value = state.label || ""; $("#tClass").value = state.cls; $("#tRound").value = state.round; $("#tTheme").value = state.theme;
+  $("#tRoster").value = state.roster.join("\n"); $("#saveNote").textContent = ""; $("#delNote").textContent = "";
+}
+function switchPeriod(i){ active = i; state = periods[active]; current = null; revealed = false; savePeriods(); fillPeriodSel(); loadSetupFields(); renderAll(); }
+let delArmed = false;
 function init(){
   for(const sel of ["#tRound","#sRound"]){ const s=$(sel); for(let i=1;i<=MAX_ROUND;i++) s.append(el("option",{value:String(i),text:"Round "+i})); }
   for(const sel of ["#tTheme","#sTheme"]){ const s=$(sel); Object.entries(THEMES).forEach(([k,v])=>s.append(el("option",{value:k,text:v}))); }
-  $("#tClass").value = state.cls; $("#tRound").value = state.round; $("#tTheme").value = state.theme; $("#tRoster").value = state.roster.join("\n");
+  fillPeriodSel(); loadSetupFields();
   $("#sClass").value = store.get("sClass", state.cls); $("#sName").value = store.get("sName",""); $("#sRound").value = state.round; $("#sTheme").value = state.theme;
   const pr = store.get("profile", null);
   if(pr){ $("#pHousing").value = pr.housing||"parents"; ["car","loans","card","hustle","invest","pet"].forEach(k=>{ $("#p"+k[0].toUpperCase()+k.slice(1)).checked = !!pr[k]; }); }
@@ -370,9 +393,10 @@ function init(){
   $("#nextRound").addEventListener("click",()=>setRound(state.round+1));
   $("#newsBtn").addEventListener("click",()=>renderNews(true));
   $("#saveSetup").addEventListener("click",()=>{
-    state.cls = $("#tClass").value.trim(); store.set("cls", state.cls);
-    state.roster = $("#tRoster").value.split("\n").map(s=>s.trim()).filter(Boolean); store.set("roster", state.roster);
-    state.theme = +$("#tTheme").value; store.set("theme", state.theme);
+    state.label = $("#tLabel").value.trim() || ("Period " + (active+1));
+    state.cls = $("#tClass").value.trim();
+    state.roster = $("#tRoster").value.split("\n").map(s=>s.trim()).filter(Boolean);
+    state.theme = +$("#tTheme").value; savePeriods(); fillPeriodSel();
     setRound(+$("#tRound").value);
     $("#saveNote").textContent = "Saved · " + state.roster.length + " students";
   });
@@ -383,8 +407,16 @@ function init(){
     try{ navigator.clipboard.writeText(txt).then(()=>{ note.textContent = "Copied. Paste it into a doc or spreadsheet."; }, fallback); }catch(e){ fallback(); }
   });
   $("#sDraw").addEventListener("click", studentDraw);
+  $("#periodSel").addEventListener("change", e => switchPeriod(+e.target.value));
+  $("#addPeriod").addEventListener("click", ()=>{ periods.push(newPeriod()); switchPeriod(periods.length-1); showTab("setup"); });
+  $("#delPeriod").addEventListener("click", ()=>{
+    if(periods.length === 1){ $("#delNote").textContent = "You need at least one period."; return; }
+    if(!delArmed){ delArmed = true; $("#delNote").textContent = "Click Delete again to remove " + (state.label||"this period") + " and its log."; $("#delPeriod").textContent = "Yes, delete it"; return; }
+    delArmed = false; $("#delPeriod").textContent = "Delete this period";
+    periods.splice(active,1); switchPeriod(Math.max(0, active-1));
+  });
 
-  if(studentOnly){ ["draw","log","setup"].forEach(t=>$("#tab-"+t).hidden=true); $("#roundChip").hidden = true; $("#classChip").hidden = true; showTab("student"); }
+  if(studentOnly){ ["draw","log","setup"].forEach(t=>$("#tab-"+t).hidden=true); $("#roundChip").hidden = true; $("#classChip").hidden = true; $("#periodWrap").hidden = true; showTab("student"); }
   else showTab(store.get("tab", state.cls ? "draw" : "setup"));
   renderAll();
 }
