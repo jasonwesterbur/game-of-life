@@ -76,6 +76,10 @@ textarea{min-height:220px;resize:vertical}
 .life{border-width:3px}
 .life h3{font-size:30px}
 .life .strip b{font-size:30px}
+.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.plans div{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:6px;text-align:center}
+.plans b{display:block;font-family:var(--display);font-size:28px;line-height:1.1;font-variant-numeric:tabular-nums}
+.plans span{font-size:13px;color:var(--muted)}
 .tip{font-size:15px;font-weight:700;background:var(--surface);border-radius:8px;padding:6px 10px;border-left:4px solid var(--prot)}
 .dice{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .die{width:64px;height:64px;border-radius:14px;border:3px solid var(--ink);display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:40px;background:var(--surface)}
@@ -145,7 +149,7 @@ details summary{cursor:pointer}
     <div class="panel">
       <h2>My turn</h2>
       <label class="field">Class code (on the board)<input id="sClass" autocomplete="off" placeholder="e.g. P1-S1"></label>
-      <label class="field">Your name (first name, first letter capitalized, as on the roster)<input id="sName" autocomplete="off" placeholder="e.g. Maria G"></label>
+      <label class="field">Your name (first name + last initial, as on the roster)<input id="sName" autocomplete="off" placeholder="e.g. Maria G"></label>
       <label class="field">Round<select id="sRound"></select></label>
       <button class="btn" id="sDraw">Draw my cards</button>
       <p class="note" id="sNote">Drawing again shows the same cards. Your teacher's screen shows them too.</p>
@@ -170,8 +174,9 @@ details summary{cursor:pointer}
       <h2>How a turn works</h2>
       <ol style="margin:0;padding-left:20px;display:grid;gap:6px">
         <li>Each student sees <b>one Keep, one Use Now and one Protection card</b>. They keep <b>one</b> of the three.</li>
-        <li>Then they read their <b>Life Event</b> and record it in the Life Event rows.</li>
+        <li>Then their <b>Life Event</b> appears, and they record it in the Life Event rows. It stays hidden until they keep a card, so they can't pick a Protection card to match it. On a student's own screen, the choice locks once it's made.</li>
         <li>Keep and Protection cards last the whole game. Use Now cards count only this round.</li>
+        <li><b>Medical bills</b> show the full bill and what each health plan pays: Basic 30%, Standard 10%, Premium 2%. Students record the amount for their own plan.</li>
         <li>Protection and Keep cards show the <b>chance a matching Life Event comes up</b>, so students can make a smart choice.</li>
         <li>Dice are for the Life Choice Menu only, with up to 3 rolls a round.</li>
         <li>Students draw on their own: share this page's link with <code>#student</code> on the end.</li>
@@ -181,13 +186,34 @@ details summary{cursor:pointer}
   </section>
 </div>
 
-<script src="cards.js"></script>
+<script>
+window.__cardsProblem = null;
+window.addEventListener("error", function(e){
+  if(e && e.filename && /cards\.js/.test(e.filename)) window.__cardsProblem = { kind:"syntax", line: e.lineno, msg: e.message };
+});
+</script>
+<script src="cards.js?v=2" onerror="window.__cardsProblem={kind:'missing'}"></script>
 <script>
 const DATA = window.CARDS;
-if(!DATA || !Array.isArray(DATA.life) || !Array.isArray(DATA.keep) || !Array.isArray(DATA.use) || !Array.isArray(DATA.protect)){
-  document.querySelector(".wrap").innerHTML = '<div class="panel" style="border:3px solid var(--bad)"><h2>Card file has a typo</h2><p>The site couldn\'t read <b>cards.js</b>. Usually a quote mark or comma was deleted by accident.</p><p><b>To fix it:</b> on GitHub, open cards.js, click <b>History</b>, open the version before your last change, and copy it back.</p></div>';
-  throw new Error("cards.js missing or invalid");
-}
+(function checkCards(){
+  const P = window.__cardsProblem;
+  let title = "", body = "";
+  if(P && P.kind === "missing"){
+    title = "Can't find cards.js";
+    body = "<p>The site looked for a file named exactly <b>cards.js</b> next to index.html and didn't find it.</p><ul><li>On GitHub, check the file name. Downloads often get renamed to <b>cards (1).js</b> or <b>cards.js.txt</b>. Rename it to <b>cards.js</b>.</li><li>Make sure it's in the same folder as index.html, not inside another folder.</li><li>Just uploaded it? Wait 2 minutes and refresh.</li></ul>";
+  } else if(P && P.kind === "syntax"){
+    title = "Card file has a typo";
+    body = "<p>There's a typo in <b>cards.js</b> near line <b>" + P.line + "</b>. Usually a quote mark or comma was deleted.</p><p>On GitHub, open cards.js, go to that line, and compare it with the lines around it. Or click <b>History</b> and copy back the earlier version.</p>";
+  } else if(DATA && Array.isArray(DATA.up) && !Array.isArray(DATA.keep)){
+    title = "Old cards.js file";
+    body = "<p>This page needs the <b>new</b> cards.js (the simple deck), but GitHub has the old one.</p><p>Upload the new cards.js and replace the old file. If your download was renamed <b>cards (1).js</b>, rename it to <b>cards.js</b> first. Then wait 2 minutes and refresh.</p>";
+  } else if(!DATA || !Array.isArray(DATA.life) || !Array.isArray(DATA.keep) || !Array.isArray(DATA.use) || !Array.isArray(DATA.protect)){
+    title = "cards.js didn't load";
+    body = "<p>The file loaded but looks incomplete. Re-upload the cards.js from the chat, then wait 2 minutes and refresh.</p>";
+  } else return;
+  document.querySelector(".wrap").innerHTML = '<div class="panel" style="border:3px solid var(--bad)"><h2>' + title + '</h2>' + body + '<p class="note">Still stuck? Press Ctrl+Shift+R to refresh without the old copy.</p></div>';
+  throw new Error("cards.js problem: " + title);
+})();
 const ROUNDS = DATA.rounds || 8, MAX_ROUND = 20;
 const CATVAR = {"Medical":"--c-med","Transportation":"--c-trn","Job":"--c-job","Home":"--c-hom","Money & Scams":"--c-mon","Family & Friends":"--c-fam"};
 
@@ -220,6 +246,9 @@ function el(tag, attrs, ...kids){ const e=document.createElement(tag); for(const
 const fmt$ = m => m===0 ? "$0" : (m>0 ? "+$" : "−$") + Math.abs(m).toLocaleString();
 const fmtN = n => n===0 ? "0" : (n>0 ? "+"+n : "−"+Math.abs(n));
 function strip(c){ return el("div",{class:"strip"}, el("div",{}, el("b",{text:fmt$(c.money)}), el("span",{text:"$"})), el("div",{}, el("b",{text:fmtN(c.happy)}), el("span",{text:"😊 Happiness"})), el("div",{}, el("b",{text:fmtN(c.health)}), el("span",{text:"💚 Health"}))); }
+const PLANS = Array.isArray(DATA.healthPlans) && DATA.healthPlans.length ? DATA.healthPlans : [{name:"Basic",pay:0.30},{name:"Standard",pay:0.10},{name:"Premium",pay:0.02}];
+const planCost = (bill, plan) => -Math.round(Math.abs(bill) * plan.pay);
+function planStrip(c){ return el("div",{class:"plans"}, ...PLANS.map(pl => el("div",{}, el("span",{text:pl.name+" plan · you pay "+Math.round(pl.pay*100)+"%"}), el("b",{text:fmt$(planCost(c.money, pl))})))); }
 function catPill(cat){ const s = el("span",{class:"cat",text:cat}); s.style.setProperty("--cc", "var("+(CATVAR[cat]||"--muted")+")"); return s; }
 
 function keepEl(c, opts){
@@ -254,8 +283,17 @@ function lifeEl(c){
   const card = el("div",{class:"card life t-"+c.kind},
     el("div",{class:"row between"}, el("div",{class:"kind",text:"Life Event · "+(c.kind==="bad"?"Setback":"Good news")+" · "+c.id}), catPill(c.cat)),
     el("div",{class:"row-name",text:"Tracker: Life Event rows"}),
-    el("h3",{text:c.title}), el("div",{text:c.text}), strip(c));
-  if(c.kind==="bad") card.append(el("div",{class:"tip",text:"Have a Protection card that covers " + c.cat + "? Use it now and write what you saved in Protection Card Used."}));
+    el("h3",{text:c.title}), el("div",{text:c.text}));
+  if(c.bill){
+    card.append(el("div",{class:"when",text:"Full bill: "+fmt$(c.money)+". Your health insurance pays most of it. Pay the amount for YOUR plan:"}));
+    card.append(planStrip(c));
+    card.append(strip({money:0, happy:c.happy, health:c.health}));
+    card.lastChild.firstChild.querySelector("b").textContent = "see plan";
+    card.append(el("div",{class:"tip",text:"Write your plan's amount in the Life Event $ row."}));
+  } else {
+    card.append(strip(c));
+    if(c.kind==="bad") card.append(el("div",{class:"tip",text:"Have a Protection card that covers " + c.cat + "? Use it now and write what you saved in Protection Card Used."}));
+  }
   return card;
 }
 function diceEl(cls, name, round, opts){
@@ -273,13 +311,31 @@ function turnView(cls, name, round, opts){
   const d = drawAll(cls, name, round);
   const frag = el("div",{style:"display:grid;gap:14px"});
   frag.append(el("div",{class:"eyebrow",text:"Step 1 · Pick ONE card to keep"}));
-  const k = opts.kept || null, mk = id => opts.onKeep ? () => opts.onKeep(id) : null;
-  frag.append(el("div",{class:"ups"},
+  const k = opts.kept || null;
+  const mk = id => (!opts.onKeep || (opts.locked && k)) ? null : () => opts.onKeep(id);
+  const dim = id => k && k !== id ? "opacity:.45" : "";
+  const ups = el("div",{class:"ups"},
     keepEl(d.keep, {kept: k===d.keep.id, onKeep: mk(d.keep.id)}),
     useEl(d.use, {kept: k===d.use.id, onKeep: mk(d.use.id)}),
-    protEl(d.prot, {kept: k===d.prot.id, onKeep: mk(d.prot.id)})));
+    protEl(d.prot, {kept: k===d.prot.id, onKeep: mk(d.prot.id)}));
+  [d.keep, d.use, d.prot].forEach((c,i)=>{ const st = dim(c.id); if(st) ups.children[i].setAttribute("style", st); });
+  frag.append(ups);
+  if(k){
+    const all = [d.keep, d.use, d.prot], kc = all.find(c=>c.id===k);
+    if(kc){
+      const row = kc===d.keep ? "Keep Card Effects" : kc===d.use ? "Use now Card" : "Protection Card Used";
+      frag.append(el("div",{class:"tip",text:"You kept " + kc.title + ". Write it on your tracker in the " + row + " row." + (opts.locked ? " Your choice is locked for this round." : "")}));
+    }
+  }
   frag.append(el("div",{class:"eyebrow",text:"Step 2 · Your Life Event"}));
-  frag.append(lifeEl(d.life));
+  if(k || opts.showLife) frag.append(lifeEl(d.life));
+  else {
+    const box = el("div",{class:"card",style:"--t:var(--rule);--tt:var(--bg);text-align:center;padding:24px"},
+      el("h3",{text:"Pick one card above first"}),
+      el("div",{class:"note",text:"Your Life Event shows after you keep a card, so the choice is fair."}));
+    if(opts.onShowLife){ const b = el("button",{class:"btn ghost small",type:"button",text:"Show Life Event anyway"}); b.addEventListener("click", opts.onShowLife); box.append(b); }
+    frag.append(box);
+  }
   frag.append(diceEl(cls, name, round, {start: opts.rolls||0, onRoll: opts.onRoll}));
   return frag;
 }
@@ -319,8 +375,9 @@ function renderTurn(){
   next.disabled = idx >= state.roster.length-1;
   next.addEventListener("click", ()=>{ current = state.roster[idx+1]; logEntry(state.round, current).drawn = true; savePeriods(); renderRoster(); renderTurn(); });
   box.append(el("div",{class:"row between"}, el("h2",{text:name}), next));
-  box.append(turnView(state.cls, name, state.round, { kept: e.kept, rolls: e.rolls, onKeep: id => { e.kept = (e.kept===id) ? null : id; savePeriods(); renderTurn(); }, onRoll: n => { e.rolls = n; savePeriods(); } }));
+  box.append(turnView(state.cls, name, state.round, { kept: e.kept, rolls: e.rolls, showLife: e.showLife, onShowLife: () => { e.showLife = true; savePeriods(); renderTurn(); }, onKeep: id => { e.kept = (e.kept===id) ? null : id; savePeriods(); renderTurn(); }, onRoll: n => { e.rolls = n; savePeriods(); } }));
 }
+function lifeMoneyText(c){ return c.bill ? PLANS.map(pl=>pl.name+" "+fmt$(planCost(c.money,pl))).join(" / ") : fmt$(c.money); }
 function logRows(){
   return state.roster.map(name => {
     const d = drawAll(state.cls, name, state.round), e = ((state.log2[String(state.round)]||{})[name]) || {};
@@ -336,7 +393,7 @@ function renderLog(){
   const c = (card, kept) => !revealed ? el("td",{class:"muted",text:"hidden"}) : el("td",{}, kept===card.id ? el("b",{class:"k",text:card.title}) : card.title, el("span",{class:"note",text:" "+card.id}));
   for(const r of logRows()){
     tb.append(el("tr",{}, el("td",{text:r.name}), c(r.d.keep, r.kept), c(r.d.use, r.kept), c(r.d.prot, r.kept),
-      revealed ? el("td",{}, catPill(r.d.life.cat), " ", r.d.life.title, el("span",{class:"note",text:" "+fmt$(r.d.life.money)+" · 😊"+fmtN(r.d.life.happy)+" · 💚"+fmtN(r.d.life.health)})) : el("td",{class:"muted",text:"hidden"}),
+      revealed ? el("td",{}, catPill(r.d.life.cat), " ", r.d.life.title, el("span",{class:"note",text:" "+lifeMoneyText(r.d.life)+" · 😊"+fmtN(r.d.life.happy)+" · 💚"+fmtN(r.d.life.health)})) : el("td",{class:"muted",text:"hidden"}),
       el("td",{class:"num",text: revealed ? r.dice.join(" · ")+(r.rolls?"  (rolled "+r.rolls+")":"") : "hidden"})));
   }
   t.append(tb);
@@ -345,12 +402,12 @@ function renderLog(){
 function logText(){
   const lines = ["Game of Life · "+(state.label||"")+" · Class "+state.cls+" · Round "+state.round, ""];
   const all = id => [ ...DATA.keep, ...DATA.use, ...DATA.protect ].find(x=>x.id===id);
-  for(const r of logRows()) lines.push([r.name, "Keep: "+r.d.keep.title, "Use Now: "+r.d.use.title, "Protection: "+r.d.prot.title, "Kept: "+(r.kept ? all(r.kept).title : "-"), "Life: "+r.d.life.title+" ("+fmt$(r.d.life.money)+", 😊"+fmtN(r.d.life.happy)+", 💚"+fmtN(r.d.life.health)+")", "Dice: "+r.dice.join("/")].join(" | "));
+  for(const r of logRows()) lines.push([r.name, "Keep: "+r.d.keep.title, "Use Now: "+r.d.use.title, "Protection: "+r.d.prot.title, "Kept: "+(r.kept ? all(r.kept).title : "-"), "Life: "+r.d.life.title+" ("+lifeMoneyText(r.d.life)+", 😊"+fmtN(r.d.life.happy)+", 💚"+fmtN(r.d.life.health)+")", "Dice: "+r.dice.join("/")].join(" | "));
   return lines.join("\n");
 }
 function renderOdds(){
   const N = DATA.life.length;
-  $("#oddsLead").textContent = "Every student draws 1 Life Event from " + N + " cards each round. These are the chances for one student, per round and over " + ROUNDS + " rounds.";
+  $("#oddsLead").textContent = "Every student draws 1 Life Event from " + N + " cards each round. These are the chances for one student, per round and over " + ROUNDS + " rounds. Medical bills are covered by each student's health plan: " + "students on " + PLANS.map(pl=>pl.name+" pay "+Math.round(pl.pay*100)+"%").join(", ") + " of each bill.";
   const t = $("#oddsTable"); t.textContent = "";
   t.append(el("thead",{}, el("tr",{}, ...["Area","Setbacks in deck","Chance of a setback each round","Over "+ROUNDS+" rounds","Good-news cards","Chance of good news each round"].map(h=>el("th",{text:h})))));
   const tb = el("tbody");
@@ -370,7 +427,9 @@ function studentDraw(){
   const out = $("#sResult"); out.textContent = "";
   if(!cls || !name){ $("#sNote").textContent = "Type the class code and your name first."; out.append(el("p",{class:"muted",style:"margin:0",text:"Your cards will show here."})); return; }
   out.append(el("div",{class:"eyebrow",text:name+" · Round "+round}));
-  out.append(turnView(cls, name, round, {}));
+  const key = "pick|" + codeNorm(cls) + "|" + norm(name) + "|" + round;
+  out.append(turnView(cls, name, round, { kept: store.get(key, null), locked: true,
+    onKeep: id => { store.set(key, id); studentDraw(); } }));
   $("#sNote").textContent = "Drawing again shows the same cards. Your teacher's screen shows them too.";
 }
 
