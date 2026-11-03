@@ -1,0 +1,481 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light}body{margin:0;font:14px system-ui}img{max-width:100%}[hidden]{display:none!important}</style></head><body><title>Game of Life Card Shuffler</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap">
+<style>
+/* Layout: header with period + mode tabs; a draw shows 3 upgrade cards in a row on top, the Life Event full width below. */
+:root{
+  --bg:#F3F5F1; --surface:#FFFFFF; --ink:#16202A; --muted:#5B6670; --rule:#D6DCD5;
+  --keep:#1F7A4A; --use:#8A6D1E; --prot:#2B5DA6; --bad:#B3362F; --good:#1F7A4A;
+  --tint-keep:#E3F2E8; --tint-use:#F5EED9; --tint-prot:#E3EBF7; --tint-bad:#F8E4E2; --tint-good:#E3F2E8;
+  --c-med:#B3362F; --c-trn:#2B5DA6; --c-job:#1F7A4A; --c-hom:#B86A1E; --c-mon:#6B4BB3; --c-fam:#9A3D6E;
+  --focus:#2B5DA6;
+  --display:"Barlow Condensed", "Arial Narrow", Arial, sans-serif;
+  --body:"Atkinson Hyperlegible", Verdana, Arial, sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12171C; --surface:#1B232B; --ink:#E8ECEF; --muted:#9AA6B0; --rule:#2E3A44;
+  --keep:#5CC28A; --use:#D9B85E; --prot:#7EA6E6; --bad:#EB7A72; --good:#5CC28A;
+  --tint-keep:#1C3328; --tint-use:#36301C; --tint-prot:#1E2C42; --tint-bad:#3A2220; --tint-good:#1C3328;
+  --c-med:#EB7A72; --c-trn:#7EA6E6; --c-job:#5CC28A; --c-hom:#E39B52; --c-mon:#A88BEB; --c-fam:#D88AB4;
+  --focus:#7EA6E6; color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#12171C; --surface:#1B232B; --ink:#E8ECEF; --muted:#9AA6B0; --rule:#2E3A44;
+  --keep:#5CC28A; --use:#D9B85E; --prot:#7EA6E6; --bad:#EB7A72; --good:#5CC28A;
+  --tint-keep:#1C3328; --tint-use:#36301C; --tint-prot:#1E2C42; --tint-bad:#3A2220; --tint-good:#1C3328;
+  --c-med:#EB7A72; --c-trn:#7EA6E6; --c-job:#5CC28A; --c-hom:#E39B52; --c-mon:#A88BEB; --c-fam:#D88AB4;
+  --focus:#7EA6E6; color-scheme:dark;}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.45;margin:0}
+.wrap{max-width:1200px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px;display:grid;gap:18px}
+h1,h2,h3{font-family:var(--display);font-weight:700;margin:0;text-wrap:balance}
+h1{font-size:34px;line-height:1} h2{font-size:26px} h3{font-size:22px;line-height:1.1}
+.muted{color:var(--muted)} .note{font-size:14px;color:var(--muted);margin:0}
+.eyebrow{font-family:var(--display);font-weight:600;font-size:14px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+header.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 20px}
+.brand{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.chip{font-family:var(--display);font-weight:600;font-size:18px;border:2px solid var(--ink);border-radius:999px;padding:2px 12px;white-space:nowrap}
+nav.tabs{display:flex;gap:6px;flex-wrap:wrap}
+nav.tabs button{font:inherit;font-family:var(--display);font-weight:600;font-size:19px;padding:6px 14px;border-radius:8px;border:1px solid var(--rule);background:var(--surface);color:var(--ink);cursor:pointer}
+nav.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+button,select,input,textarea{font:inherit;color:var(--ink)}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.btn{font-family:var(--display);font-weight:600;font-size:20px;padding:8px 18px;border-radius:8px;border:2px solid var(--ink);background:var(--ink);color:var(--bg);cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn.small{font-size:16px;padding:4px 12px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.between{justify-content:space-between}
+.panel{background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:18px;display:grid;gap:14px;min-width:0;align-content:start}
+.cols{display:grid;grid-template-columns:minmax(240px,300px) 1fr;gap:18px}
+label.field{display:grid;gap:4px;font-size:15px;color:var(--muted)}
+label.field input,label.field select,label.field textarea{background:var(--bg);border:1px solid var(--rule);border-radius:8px;padding:8px 10px;font-size:17px}
+textarea{min-height:220px;resize:vertical}
+.roster{display:grid;gap:4px;max-height:560px;overflow:auto}
+.roster button{font:inherit;text-align:left;padding:8px 10px;border-radius:8px;border:1px solid var(--rule);background:var(--bg);cursor:pointer;display:flex;justify-content:space-between;gap:8px}
+.roster button[aria-current="true"]{border:2px solid var(--ink);font-weight:700}
+.roster .done{font-size:13px;color:var(--good);font-weight:700}
+
+/* cards */
+.ups{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.card{border-radius:12px;border:2px solid var(--t);background:var(--tt);padding:14px;display:grid;gap:8px;min-width:0;align-content:start}
+.card .kind{font-family:var(--display);font-weight:700;font-size:15px;letter-spacing:.1em;text-transform:uppercase;color:var(--t)}
+.card .row-name{font-size:13px;color:var(--muted)}
+.card.kept{outline:4px solid var(--ink);outline-offset:2px}
+.t-keep{--t:var(--keep);--tt:var(--tint-keep)} .t-use{--t:var(--use);--tt:var(--tint-use)} .t-prot{--t:var(--prot);--tt:var(--tint-prot)}
+.t-bad{--t:var(--bad);--tt:var(--tint-bad)} .t-good{--t:var(--good);--tt:var(--tint-good)}
+.strip{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.strip div{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:4px 6px;text-align:center}
+.strip b{display:block;font-family:var(--display);font-size:24px;line-height:1.1;font-variant-numeric:tabular-nums}
+.strip span{font-size:12px;color:var(--muted)}
+.odds{font-size:14px;border-top:1px dashed var(--t);padding-top:6px}
+.odds b{font-family:var(--display);font-size:18px}
+.when{font-size:14px;font-weight:700}
+.cat{display:inline-block;font-size:13px;font-weight:700;border-radius:999px;padding:1px 10px;color:#fff;background:var(--cc)}
+.life{border-width:3px}
+.life h3{font-size:30px}
+.life .strip b{font-size:30px}
+.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.plans div{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:6px;text-align:center}
+.plans b{display:block;font-family:var(--display);font-size:28px;line-height:1.1;font-variant-numeric:tabular-nums}
+.plans span{font-size:13px;color:var(--muted)}
+.tip{font-size:15px;font-weight:700;background:var(--surface);border-radius:8px;padding:6px 10px;border-left:4px solid var(--prot)}
+.dice{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.die{width:64px;height:64px;border-radius:14px;border:3px solid var(--ink);display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:40px;background:var(--surface)}
+.die.roll{animation:spin .5s ease-out}
+@keyframes spin{from{transform:rotate(-200deg) scale(.6)}to{transform:none}}
+@media (prefers-reduced-motion: reduce){.die.roll{animation:none}}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-family:var(--display);font-weight:600;font-size:15px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+td.num{font-variant-numeric:tabular-nums}
+td b.k{text-decoration:underline}
+details summary{cursor:pointer}
+@media (max-width:860px){.ups{grid-template-columns:1fr}}
+@media (max-width:760px){.cols{grid-template-columns:1fr}.roster{max-height:220px}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>Card Shuffler</h1>
+      <label class="chip" id="periodWrap" style="display:flex;gap:6px;align-items:center">Period <select id="periodSel" aria-label="Class period" style="font:inherit;border:0;background:transparent;color:inherit"></select></label>
+      <span class="chip" id="classChip">Class: not set</span>
+      <span class="chip" id="roundChip">Round 1</span>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Mode">
+      <button role="tab" data-tab="draw" id="tab-draw">Draw</button>
+      <button role="tab" data-tab="log" id="tab-log">Class Log</button>
+      <button role="tab" data-tab="odds" id="tab-odds">Odds</button>
+      <button role="tab" data-tab="student" id="tab-student">Student</button>
+      <button role="tab" data-tab="setup" id="tab-setup">Setup</button>
+    </nav>
+  </header>
+
+  <!-- TEACHER DRAW -->
+  <section id="view-draw" class="cols" hidden>
+    <div class="panel">
+      <div class="row between"><h2 id="roundTitle">Round 1</h2>
+        <div class="row"><button class="btn ghost small" id="prevRound" aria-label="Previous round">◀</button><button class="btn ghost small" id="nextRound" aria-label="Next round">▶</button></div></div>
+      <div class="eyebrow">Students</div>
+      <div class="roster" id="roster"></div>
+      <p class="note">Pick a student to draw for them. A check means you've drawn for them this round.</p>
+    </div>
+    <div class="panel" aria-live="polite" id="turnBox"></div>
+  </section>
+
+  <!-- CLASS LOG -->
+  <section id="view-log" class="panel" hidden>
+    <div class="row between">
+      <div><div class="eyebrow">Official draws · the same on every screen</div><h2 id="logTitle">Class Log</h2></div>
+      <div class="row"><button class="btn ghost" id="revealBtn">Reveal all</button><button class="btn ghost" id="copyLog">Copy log</button></div>
+    </div>
+    <p class="note">The underlined card is the one kept, when you marked it on the Draw tab. Otherwise check the student's tracker.</p>
+    <div class="tablewrap"><table id="logTable"></table></div>
+    <p class="note" id="copyNote"></p>
+  </section>
+
+  <!-- ODDS -->
+  <section id="view-odds" class="panel" hidden>
+    <div><div class="eyebrow">How likely is each kind of Life Event?</div><h2>Deck odds</h2></div>
+    <p class="note" id="oddsLead"></p>
+    <div class="tablewrap"><table id="oddsTable"></table></div>
+  </section>
+
+  <!-- STUDENT -->
+  <section id="view-student" class="cols" hidden>
+    <div class="panel">
+      <h2>My turn</h2>
+      <label class="field">Class code (on the board)<input id="sClass" autocomplete="off" placeholder="e.g. P1-S1"></label>
+      <label class="field">Your name (first name + last initial, as on the roster)<input id="sName" autocomplete="off" placeholder="e.g. Maria G"></label>
+      <label class="field">Round<select id="sRound"></select></label>
+      <button class="btn" id="sDraw">Draw my cards</button>
+      <p class="note" id="sNote">Drawing again shows the same cards. Your teacher's screen shows them too.</p>
+    </div>
+    <div class="panel" id="sResult" aria-live="polite"><p class="muted" style="margin:0">Your 3 upgrade cards and your Life Event will show here.</p></div>
+  </section>
+
+  <!-- SETUP -->
+  <section id="view-setup" class="cols" hidden>
+    <div class="panel">
+      <h2>Class setup</h2>
+      <label class="field">Period name<input id="tLabel" autocomplete="off" placeholder="e.g. Period 1"></label>
+      <div class="row"><button class="btn ghost small" id="addPeriod" type="button">+ Add a period</button><button class="btn ghost small" id="delPeriod" type="button">Delete this period</button></div>
+      <p class="note" id="delNote"></p>
+      <label class="field">Class code (students type this; a different one per period)<input id="tClass" autocomplete="off" placeholder="e.g. P1-S1"></label>
+      <label class="field">Current round<select id="tRound"></select></label>
+      <label class="field">Roster: one student per line, first name + last initial<textarea id="tRoster" placeholder="Maria G&#10;Devon T&#10;Ana R"></textarea></label>
+      <div class="row"><button class="btn" id="saveSetup">Save</button><span class="note" id="saveNote"></span></div>
+      <p class="note">Saved in this browser only. Names never leave this device.</p>
+    </div>
+    <div class="panel">
+      <h2>How a turn works</h2>
+      <ol style="margin:0;padding-left:20px;display:grid;gap:6px">
+        <li>Each student sees <b>one Keep, one Use Now and one Protection card</b>. They keep <b>one</b> of the three.</li>
+        <li>Then their <b>Life Event</b> appears, and they record it in the Life Event rows. It stays hidden until they keep a card, so they can't pick a Protection card to match it. On a student's own screen, the choice locks once it's made.</li>
+        <li>Keep and Protection cards last the whole game. Use Now cards count only this round.</li>
+        <li><b>Medical bills</b> show the full bill and what each health plan pays: Basic 30%, Standard 10%, Premium 2%. Students record the amount for their own plan.</li>
+        <li>Protection and Keep cards show the <b>chance a matching Life Event comes up</b>, so students can make a smart choice.</li>
+        <li>Dice are for the Life Choice Menu only, with up to 3 rolls a round.</li>
+        <li>Students draw on their own: share this page's link with <code>#student</code> on the end.</li>
+      </ol>
+      <p class="note">Draws come from the class code, the student's name and the round, so every screen shows the same cards. Click <b>+ Add a period</b> to set up another class, and switch with the Period menu at the top.</p>
+    </div>
+  </section>
+</div>
+
+<script>
+window.__cardsProblem = null;
+window.addEventListener("error", function(e){
+  if(e && e.filename && /cards\.js/.test(e.filename)) window.__cardsProblem = { kind:"syntax", line: e.lineno, msg: e.message };
+});
+</script>
+<script src="cards.js?v=2" onerror="window.__cardsProblem={kind:'missing'}"></script>
+<script>
+const DATA = window.CARDS;
+(function checkCards(){
+  const P = window.__cardsProblem;
+  let title = "", body = "";
+  if(P && P.kind === "missing"){
+    title = "Can't find cards.js";
+    body = "<p>The site looked for a file named exactly <b>cards.js</b> next to index.html and didn't find it.</p><ul><li>On GitHub, check the file name. Downloads often get renamed to <b>cards (1).js</b> or <b>cards.js.txt</b>. Rename it to <b>cards.js</b>.</li><li>Make sure it's in the same folder as index.html, not inside another folder.</li><li>Just uploaded it? Wait 2 minutes and refresh.</li></ul>";
+  } else if(P && P.kind === "syntax"){
+    title = "Card file has a typo";
+    body = "<p>There's a typo in <b>cards.js</b> near line <b>" + P.line + "</b>. Usually a quote mark or comma was deleted.</p><p>On GitHub, open cards.js, go to that line, and compare it with the lines around it. Or click <b>History</b> and copy back the earlier version.</p>";
+  } else if(DATA && Array.isArray(DATA.up) && !Array.isArray(DATA.keep)){
+    title = "Old cards.js file";
+    body = "<p>This page needs the <b>new</b> cards.js (the simple deck), but GitHub has the old one.</p><p>Upload the new cards.js and replace the old file. If your download was renamed <b>cards (1).js</b>, rename it to <b>cards.js</b> first. Then wait 2 minutes and refresh.</p>";
+  } else if(!DATA || !Array.isArray(DATA.life) || !Array.isArray(DATA.keep) || !Array.isArray(DATA.use) || !Array.isArray(DATA.protect)){
+    title = "cards.js didn't load";
+    body = "<p>The file loaded but looks incomplete. Re-upload the cards.js from the chat, then wait 2 minutes and refresh.</p>";
+  } else return;
+  document.querySelector(".wrap").innerHTML = '<div class="panel" style="border:3px solid var(--bad)"><h2>' + title + '</h2>' + body + '<p class="note">Still stuck? Press Ctrl+Shift+R to refresh without the old copy.</p></div>';
+  throw new Error("cards.js problem: " + title);
+})();
+const ROUNDS = DATA.rounds || 8, MAX_ROUND = 20;
+const CATVAR = {"Medical":"--c-med","Transportation":"--c-trn","Job":"--c-job","Home":"--c-hom","Money & Scams":"--c-mon","Family & Friends":"--c-fam"};
+
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem("gols."+k); return v===null? d : JSON.parse(v); }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem("gols."+k, JSON.stringify(v)); }catch(e){} }
+};
+function hash(str){ let h1=0xdeadbeef^0, h2=0x41c6ce57^0; for(let i=0;i<str.length;i++){const c=str.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677);} h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909); h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909); return (h2>>>0)*4294967296+(h1>>>0); }
+function rng(s){ let a = hash(s) % 4294967296; return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+const norm = s => (s||"").toLowerCase().replace(/[^a-z]/g,"");
+const codeNorm = s => (s||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
+function pick(arr, seed){ const r = rng(seed); return arr[Math.floor(r()*arr.length)]; }
+function drawAll(cls, name, round){
+  const base = [codeNorm(cls), norm(name), round].join("|");
+  return { keep: pick(DATA.keep, base+"|keep"), use: pick(DATA.use, base+"|use"), prot: pick(DATA.protect, base+"|prot"), life: pick(DATA.life, base+"|life") };
+}
+function rollDie(cls, name, round, n){ const r = rng([codeNorm(cls), norm(name), round, "die", n].join("|")); return 1 + Math.floor(r()*6); }
+
+// ---------- odds ----------
+function countMatch(cat, kind){ return DATA.life.filter(c => (cat==="Any" || c.cat===cat) && (!kind || c.kind===kind)).length; }
+function pct(k){ const p = k / DATA.life.length; return { round: Math.round(p*100), game: Math.round((1-Math.pow(1-p, ROUNDS))*100) }; }
+function oddsEl(k, label){
+  const o = pct(k);
+  return el("div",{class:"odds"}, label+": ", el("b",{text:o.round+"%"}), " each round · ", el("b",{text:o.game+"%"}), " over "+ROUNDS+" rounds", el("div",{class:"note",text:k+" of "+DATA.life.length+" Life Event cards match"}));
+}
+
+// ---------- helpers ----------
+function $(s){ return document.querySelector(s); }
+function el(tag, attrs, ...kids){ const e=document.createElement(tag); for(const [k,v] of Object.entries(attrs||{})){ if(k==="class") e.className=v; else if(k==="text") e.textContent=v; else e.setAttribute(k,v);} for(const k of kids){ if(k==null) continue; e.append(k.nodeType? k : document.createTextNode(k)); } return e; }
+const fmt$ = m => m===0 ? "$0" : (m>0 ? "+$" : "−$") + Math.abs(m).toLocaleString();
+const fmtN = n => n===0 ? "0" : (n>0 ? "+"+n : "−"+Math.abs(n));
+function strip(c){ return el("div",{class:"strip"}, el("div",{}, el("b",{text:fmt$(c.money)}), el("span",{text:"$"})), el("div",{}, el("b",{text:fmtN(c.happy)}), el("span",{text:"😊 Happiness"})), el("div",{}, el("b",{text:fmtN(c.health)}), el("span",{text:"💚 Health"}))); }
+const PLANS = Array.isArray(DATA.healthPlans) && DATA.healthPlans.length ? DATA.healthPlans : [{name:"Basic",pay:0.30},{name:"Standard",pay:0.10},{name:"Premium",pay:0.02}];
+const planCost = (bill, plan) => -Math.round(Math.abs(bill) * plan.pay);
+function planStrip(c){ return el("div",{class:"plans"}, ...PLANS.map(pl => el("div",{}, el("span",{text:pl.name+" plan · you pay "+Math.round(pl.pay*100)+"%"}), el("b",{text:fmt$(planCost(c.money, pl))})))); }
+function catPill(cat){ const s = el("span",{class:"cat",text:cat}); s.style.setProperty("--cc", "var("+(CATVAR[cat]||"--muted")+")"); return s; }
+
+function keepEl(c, opts){
+  const w = c.when === "every" ? null : c.when;
+  const card = el("div",{class:"card t-keep"+(opts.kept?" kept":"")},
+    el("div",{class:"kind",text:"Keep · "+c.id}), el("div",{class:"row-name",text:"Tracker: Keep Card Effects"}),
+    el("h3",{text:c.title}), el("div",{text:c.text}),
+    el("div",{class:"when",text: w ? "Only when you draw a " + (w.kind==="bad"?"bad":"good") + " " + (w.cat==="Any" ? "Life Event" : w.cat + " card") + ":" : "Every round:"}),
+    strip(c),
+    w ? oddsEl(countMatch(w.cat, w.kind), "Chance it pays off") : el("div",{class:"odds"}, el("b",{text:"100%"}), " · works every round, all game"));
+  if(opts.onKeep) card.append(keepBtn(opts));
+  return card;
+}
+function useEl(c, opts){
+  const card = el("div",{class:"card t-use"+(opts.kept?" kept":"")},
+    el("div",{class:"kind",text:"Use Now · "+c.id}), el("div",{class:"row-name",text:"Tracker: Use now Card"}),
+    el("h3",{text:c.title}), el("div",{text:c.text}), el("div",{class:"when",text:"This round only:"}), strip(c),
+    el("div",{class:"odds"}, el("b",{text:"100%"}), " · you get it right now, one time"));
+  if(opts.onKeep) card.append(keepBtn(opts));
+  return card;
+}
+function protEl(c, opts){
+  const card = el("div",{class:"card t-prot"+(opts.kept?" kept":"")},
+    el("div",{class:"kind",text:"Protection · "+c.id}), el("div",{class:"row-name",text:"Tracker: Protection Card Used"}),
+    el("h3",{text:c.title}), el("div",{}, "Covers ", catPill(c.cat)), el("div",{class:"when",text:c.text}),
+    oddsEl(countMatch(c.cat, "bad"), "Chance you'll use it"));
+  if(opts.onKeep) card.append(keepBtn(opts));
+  return card;
+}
+function keepBtn(opts){ const b = el("button",{class:"btn small"+(opts.kept?"":" ghost"),type:"button",text: opts.kept ? "Kept" : "Keep this one"}); b.addEventListener("click", opts.onKeep); return b; }
+function lifeEl(c){
+  const card = el("div",{class:"card life t-"+c.kind},
+    el("div",{class:"row between"}, el("div",{class:"kind",text:"Life Event · "+(c.kind==="bad"?"Setback":"Good news")+" · "+c.id}), catPill(c.cat)),
+    el("div",{class:"row-name",text:"Tracker: Life Event rows"}),
+    el("h3",{text:c.title}), el("div",{text:c.text}));
+  if(c.bill){
+    card.append(el("div",{class:"when",text:"Full bill: "+fmt$(c.money)+". Your health insurance pays most of it. Pay the amount for YOUR plan:"}));
+    card.append(planStrip(c));
+    card.append(strip({money:0, happy:c.happy, health:c.health}));
+    card.lastChild.firstChild.querySelector("b").textContent = "see plan";
+    card.append(el("div",{class:"tip",text:"Write your plan's amount in the Life Event $ row."}));
+  } else {
+    card.append(strip(c));
+    if(c.kind==="bad") card.append(el("div",{class:"tip",text:"Have a Protection card that covers " + c.cat + "? Use it now and write what you saved in Protection Card Used."}));
+  }
+  return card;
+}
+function diceEl(cls, name, round, opts){
+  const box = el("div",{class:"dice"}), face = el("div",{class:"die",text:"?"});
+  let n = opts.start || 0;
+  const btn = el("button",{class:"btn ghost",type:"button"}), hist = el("div",{class:"note"});
+  const show = () => { hist.textContent = n ? "Rolls this round: " + Array.from({length:n},(_,i)=>rollDie(cls,name,round,i+1)).join(", ") : ""; btn.disabled = n>=3; btn.textContent = n>=3 ? "No rolls left" : "Roll #"+(n+1); };
+  btn.addEventListener("click", ()=>{ n++; face.textContent = rollDie(cls,name,round,n); face.classList.remove("roll"); void face.offsetWidth; face.classList.add("roll"); if(opts.onRoll) opts.onRoll(n); show(); });
+  if(n) face.textContent = rollDie(cls,name,round,n);
+  show();
+  box.append(face, el("div",{}, el("div",{class:"eyebrow",text:"Life Choice Menu dice"}), el("div",{class:"note",text:"Roll only when a Life Choice says to roll."})), btn, hist);
+  return box;
+}
+function turnView(cls, name, round, opts){
+  const d = drawAll(cls, name, round);
+  const frag = el("div",{style:"display:grid;gap:14px"});
+  frag.append(el("div",{class:"eyebrow",text:"Step 1 · Pick ONE card to keep"}));
+  const k = opts.kept || null;
+  const mk = id => (!opts.onKeep || (opts.locked && k)) ? null : () => opts.onKeep(id);
+  const dim = id => k && k !== id ? "opacity:.45" : "";
+  const ups = el("div",{class:"ups"},
+    keepEl(d.keep, {kept: k===d.keep.id, onKeep: mk(d.keep.id)}),
+    useEl(d.use, {kept: k===d.use.id, onKeep: mk(d.use.id)}),
+    protEl(d.prot, {kept: k===d.prot.id, onKeep: mk(d.prot.id)}));
+  [d.keep, d.use, d.prot].forEach((c,i)=>{ const st = dim(c.id); if(st) ups.children[i].setAttribute("style", st); });
+  frag.append(ups);
+  if(k){
+    const all = [d.keep, d.use, d.prot], kc = all.find(c=>c.id===k);
+    if(kc){
+      const row = kc===d.keep ? "Keep Card Effects" : kc===d.use ? "Use now Card" : "Protection Card Used";
+      frag.append(el("div",{class:"tip",text:"You kept " + kc.title + ". Write it on your tracker in the " + row + " row." + (opts.locked ? " Your choice is locked for this round." : "")}));
+    }
+  }
+  frag.append(el("div",{class:"eyebrow",text:"Step 2 · Your Life Event"}));
+  if(k || opts.showLife) frag.append(lifeEl(d.life));
+  else {
+    const box = el("div",{class:"card",style:"--t:var(--rule);--tt:var(--bg);text-align:center;padding:24px"},
+      el("h3",{text:"Pick one card above first"}),
+      el("div",{class:"note",text:"Your Life Event shows after you keep a card, so the choice is fair."}));
+    if(opts.onShowLife){ const b = el("button",{class:"btn ghost small",type:"button",text:"Show Life Event anyway"}); b.addEventListener("click", opts.onShowLife); box.append(b); }
+    frag.append(box);
+  }
+  frag.append(diceEl(cls, name, round, {start: opts.rolls||0, onRoll: opts.onRoll}));
+  return frag;
+}
+
+// ---------- periods / state ----------
+let periods = store.get("periods", null);
+if(!Array.isArray(periods) || !periods.length) periods = [{ label:"Period 1", cls:store.get("cls",""), round:store.get("round",1), roster:store.get("roster",[]), log2:{} }];
+periods.forEach(p => { p.log2 = p.log2 || {}; p.roster = p.roster || []; p.round = p.round || 1; });
+let active = Math.min(store.get("active",0), periods.length-1);
+let state = periods[active];
+let current = null, revealed = false, delArmed = false;
+const studentOnly = location.hash === "#student";
+function savePeriods(){ store.set("periods", periods); store.set("active", active); }
+function logEntry(round, name){ const k = String(round); state.log2[k] = state.log2[k] || {}; state.log2[k][name] = state.log2[k][name] || {}; return state.log2[k][name]; }
+
+function renderHeader(){
+  $("#classChip").textContent = "Class: " + (state.cls || "not set");
+  $("#roundChip").textContent = "Round " + state.round;
+  $("#roundTitle").textContent = "Round " + state.round;
+}
+function setRound(r){ state.round = Math.max(1, Math.min(MAX_ROUND, r)); savePeriods(); $("#tRound").value = state.round; current = null; renderAll(); }
+function renderRoster(){
+  const box = $("#roster"); box.textContent = "";
+  if(!state.cls || !state.roster.length){ box.append(el("p",{class:"note",text:"Add a class code and roster in Setup."})); return; }
+  const done = state.log2[String(state.round)] || {};
+  state.roster.forEach(name => {
+    const b = el("button",{type:"button","aria-current": String(current===name)}, el("span",{text:name}), done[name] && done[name].drawn ? el("span",{class:"done",text:"✓"}) : null);
+    b.addEventListener("click", ()=>{ current = name; logEntry(state.round, name).drawn = true; savePeriods(); renderRoster(); renderTurn(); });
+    box.append(b);
+  });
+}
+function renderTurn(){
+  const box = $("#turnBox"); box.textContent = "";
+  if(!current){ box.append(el("p",{class:"muted",style:"margin:0",text:"Choose a student on the left to draw their cards."})); return; }
+  const name = current, e = logEntry(state.round, name), idx = state.roster.indexOf(name);
+  const next = el("button",{class:"btn",type:"button",text: idx < state.roster.length-1 ? "Next student ▶" : "Last student"});
+  next.disabled = idx >= state.roster.length-1;
+  next.addEventListener("click", ()=>{ current = state.roster[idx+1]; logEntry(state.round, current).drawn = true; savePeriods(); renderRoster(); renderTurn(); });
+  box.append(el("div",{class:"row between"}, el("h2",{text:name}), next));
+  box.append(turnView(state.cls, name, state.round, { kept: e.kept, rolls: e.rolls, showLife: e.showLife, onShowLife: () => { e.showLife = true; savePeriods(); renderTurn(); }, onKeep: id => { e.kept = (e.kept===id) ? null : id; savePeriods(); renderTurn(); }, onRoll: n => { e.rolls = n; savePeriods(); } }));
+}
+function lifeMoneyText(c){ return c.bill ? PLANS.map(pl=>pl.name+" "+fmt$(planCost(c.money,pl))).join(" / ") : fmt$(c.money); }
+function logRows(){
+  return state.roster.map(name => {
+    const d = drawAll(state.cls, name, state.round), e = ((state.log2[String(state.round)]||{})[name]) || {};
+    return { name, d, kept: e.kept, dice: [1,2,3].map(i=>rollDie(state.cls,name,state.round,i)), rolls: e.rolls||0 };
+  });
+}
+function renderLog(){
+  const t = $("#logTable"); t.textContent = "";
+  $("#logTitle").textContent = "Class Log · " + (state.label||"") + " · Round " + state.round;
+  if(!state.cls || !state.roster.length){ t.append(el("tr",{}, el("td",{text:"Add a class code and roster in Setup first."}))); return; }
+  t.append(el("thead",{}, el("tr",{}, ...["Student","Keep","Use Now","Protection","Life Event","Dice 1 · 2 · 3"].map(h=>el("th",{text:h})))));
+  const tb = el("tbody");
+  const c = (card, kept) => !revealed ? el("td",{class:"muted",text:"hidden"}) : el("td",{}, kept===card.id ? el("b",{class:"k",text:card.title}) : card.title, el("span",{class:"note",text:" "+card.id}));
+  for(const r of logRows()){
+    tb.append(el("tr",{}, el("td",{text:r.name}), c(r.d.keep, r.kept), c(r.d.use, r.kept), c(r.d.prot, r.kept),
+      revealed ? el("td",{}, catPill(r.d.life.cat), " ", r.d.life.title, el("span",{class:"note",text:" "+lifeMoneyText(r.d.life)+" · 😊"+fmtN(r.d.life.happy)+" · 💚"+fmtN(r.d.life.health)})) : el("td",{class:"muted",text:"hidden"}),
+      el("td",{class:"num",text: revealed ? r.dice.join(" · ")+(r.rolls?"  (rolled "+r.rolls+")":"") : "hidden"})));
+  }
+  t.append(tb);
+  $("#revealBtn").textContent = revealed ? "Hide" : "Reveal all";
+}
+function logText(){
+  const lines = ["Game of Life · "+(state.label||"")+" · Class "+state.cls+" · Round "+state.round, ""];
+  const all = id => [ ...DATA.keep, ...DATA.use, ...DATA.protect ].find(x=>x.id===id);
+  for(const r of logRows()) lines.push([r.name, "Keep: "+r.d.keep.title, "Use Now: "+r.d.use.title, "Protection: "+r.d.prot.title, "Kept: "+(r.kept ? all(r.kept).title : "-"), "Life: "+r.d.life.title+" ("+lifeMoneyText(r.d.life)+", 😊"+fmtN(r.d.life.happy)+", 💚"+fmtN(r.d.life.health)+")", "Dice: "+r.dice.join("/")].join(" | "));
+  return lines.join("\n");
+}
+function renderOdds(){
+  const N = DATA.life.length;
+  $("#oddsLead").textContent = "Every student draws 1 Life Event from " + N + " cards each round. These are the chances for one student, per round and over " + ROUNDS + " rounds. Medical bills are covered by each student's health plan: " + "students on " + PLANS.map(pl=>pl.name+" pay "+Math.round(pl.pay*100)+"%").join(", ") + " of each bill.";
+  const t = $("#oddsTable"); t.textContent = "";
+  t.append(el("thead",{}, el("tr",{}, ...["Area","Setbacks in deck","Chance of a setback each round","Over "+ROUNDS+" rounds","Good-news cards","Chance of good news each round"].map(h=>el("th",{text:h})))));
+  const tb = el("tbody");
+  for(const cat of DATA.categories){
+    const b = countMatch(cat,"bad"), g = countMatch(cat,"good"), pb = pct(b), pg = pct(g);
+    tb.append(el("tr",{}, el("td",{}, catPill(cat)), el("td",{class:"num",text:String(b)}), el("td",{class:"num",text:pb.round+"%"}), el("td",{class:"num",text:pb.game+"%"}), el("td",{class:"num",text:String(g)}), el("td",{class:"num",text:pg.round+"%"})));
+  }
+  const ab = countMatch("Any","bad"), pa = pct(ab);
+  tb.append(el("tr",{}, el("td",{}, el("b",{text:"Any setback"})), el("td",{class:"num",text:String(ab)}), el("td",{class:"num",text:pa.round+"%"}), el("td",{class:"num",text:pa.game+"%"}), el("td",{text:""}), el("td",{text:""})));
+  t.append(tb);
+}
+
+// ---------- student ----------
+function studentDraw(){
+  const cls = $("#sClass").value.trim(), name = $("#sName").value.trim(), round = +$("#sRound").value;
+  store.set("sClass", cls); store.set("sName", name);
+  const out = $("#sResult"); out.textContent = "";
+  if(!cls || !name){ $("#sNote").textContent = "Type the class code and your name first."; out.append(el("p",{class:"muted",style:"margin:0",text:"Your cards will show here."})); return; }
+  out.append(el("div",{class:"eyebrow",text:name+" · Round "+round}));
+  const key = "pick|" + codeNorm(cls) + "|" + norm(name) + "|" + round;
+  out.append(turnView(cls, name, round, { kept: store.get(key, null), locked: true,
+    onKeep: id => { store.set(key, id); studentDraw(); } }));
+  $("#sNote").textContent = "Drawing again shows the same cards. Your teacher's screen shows them too.";
+}
+
+// ---------- tabs / setup ----------
+function showTab(t){
+  for(const v of ["draw","log","odds","student","setup"]){ $("#view-"+v).hidden = v!==t; $("#tab-"+v).setAttribute("aria-selected", String(v===t)); }
+  if(!studentOnly) store.set("tab", t);
+  if(t==="log") renderLog();
+}
+function fillPeriodSel(){ const sel = $("#periodSel"); sel.textContent = ""; periods.forEach((p,i)=> sel.append(el("option",{value:String(i),text:p.label || ("Period "+(i+1))}))); sel.value = String(active); }
+function loadSetupFields(){ $("#tLabel").value = state.label || ""; $("#tClass").value = state.cls; $("#tRound").value = state.round; $("#tRoster").value = state.roster.join("\n"); $("#saveNote").textContent = ""; $("#delNote").textContent = ""; }
+function switchPeriod(i){ active = i; state = periods[active]; current = null; revealed = false; savePeriods(); fillPeriodSel(); loadSetupFields(); renderAll(); }
+function renderAll(){ renderHeader(); renderRoster(); renderTurn(); renderLog(); renderOdds(); }
+
+function init(){
+  for(const sel of ["#tRound","#sRound"]){ const s=$(sel); for(let i=1;i<=MAX_ROUND;i++) s.append(el("option",{value:String(i),text:"Round "+i})); }
+  fillPeriodSel(); loadSetupFields();
+  $("#sClass").value = store.get("sClass", state.cls); $("#sName").value = store.get("sName",""); $("#sRound").value = state.round;
+  document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>showTab(b.dataset.tab)));
+  $("#prevRound").addEventListener("click",()=>setRound(state.round-1));
+  $("#nextRound").addEventListener("click",()=>setRound(state.round+1));
+  $("#saveSetup").addEventListener("click",()=>{
+    state.label = $("#tLabel").value.trim() || ("Period " + (active+1));
+    state.cls = $("#tClass").value.trim();
+    state.roster = $("#tRoster").value.split("\n").map(s=>s.trim()).filter(Boolean);
+    savePeriods(); fillPeriodSel(); setRound(+$("#tRound").value);
+    $("#saveNote").textContent = "Saved · " + state.roster.length + " students";
+  });
+  $("#periodSel").addEventListener("change", e => switchPeriod(+e.target.value));
+  $("#addPeriod").addEventListener("click", ()=>{ periods.push({ label:"Period "+(periods.length+1), cls:"", round:1, roster:[], log2:{} }); switchPeriod(periods.length-1); showTab("setup"); });
+  $("#delPeriod").addEventListener("click", ()=>{
+    if(periods.length === 1){ $("#delNote").textContent = "You need at least one period."; return; }
+    if(!delArmed){ delArmed = true; $("#delNote").textContent = "Click again to delete " + (state.label||"this period") + " and its log."; $("#delPeriod").textContent = "Yes, delete it"; return; }
+    delArmed = false; $("#delPeriod").textContent = "Delete this period"; periods.splice(active,1); switchPeriod(Math.max(0, active-1));
+  });
+  $("#revealBtn").addEventListener("click",()=>{ revealed = !revealed; renderLog(); });
+  $("#copyLog").addEventListener("click",()=>{
+    const txt = logText(), note = $("#copyNote");
+    const fallback = () => { const ta = el("textarea",{style:"width:100%;min-height:160px"}); ta.value = txt; note.textContent = ""; note.append("Copy didn't work here. Select the text below and copy it:", ta); ta.select(); };
+    try{ navigator.clipboard.writeText(txt).then(()=>{ note.textContent = "Copied. Paste it into a doc or spreadsheet."; }, fallback); }catch(e){ fallback(); }
+  });
+  $("#sDraw").addEventListener("click", studentDraw);
+  if(studentOnly){ ["draw","log","setup"].forEach(t=>$("#tab-"+t).hidden=true); ["#roundChip","#classChip","#periodWrap"].forEach(s=>$(s).hidden=true); showTab("student"); }
+  else showTab(store.get("tab", state.cls ? "draw" : "setup"));
+  renderAll();
+}
+init();
+</script>
+</body></html>
