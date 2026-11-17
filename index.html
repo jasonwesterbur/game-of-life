@@ -1,4 +1,5 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light}body{margin:0;font:14px system-ui}img{max-width:100%}[hidden]{display:none!important}</style></head><body><title>Game of Life Card Shuffler</title>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Game of Life Card Shuffler</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap">
@@ -57,6 +58,32 @@ textarea{min-height:220px;resize:vertical}
 .roster button[aria-current="true"]{border:2px solid var(--ink);font-weight:700}
 .roster .done{font-size:13px;color:var(--good);font-weight:700}
 
+
+[hidden]{display:none !important}
+/* alert tab */
+.alert{border-radius:14px;border:3px solid var(--t);background:var(--surface);padding:22px;display:grid;gap:14px}
+.alert.a-scam{--t:var(--bad)} .alert.a-news{--t:var(--prot)} .alert.a-challenge{--t:var(--use)}
+.alert .kind{font-family:var(--display);font-weight:700;font-size:22px;letter-spacing:.08em;text-transform:uppercase;color:var(--t)}
+.alert h3{font-size:38px}
+.alert .big{font-size:22px}
+.vote{display:flex;gap:12px;flex-wrap:wrap}
+.vote span{font-family:var(--display);font-weight:700;font-size:26px;border:2px solid var(--ink);border-radius:10px;padding:4px 18px}
+.answer{font-family:var(--display);font-weight:700;font-size:44px;line-height:1}
+.answer.scam,.answer.trick{color:var(--bad)} .answer.real{color:var(--good)}
+.score{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.score div{border:1px solid var(--rule);border-radius:10px;padding:10px 12px;background:var(--bg)}
+.score b{display:block;font-family:var(--display);font-size:30px;line-height:1.1}
+.mock{background:#fff;color:#111;border:1px solid #ccc;border-radius:14px;padding:16px;max-width:620px;font-family:Arial,Helvetica,sans-serif;font-size:21px;line-height:1.4;position:relative}
+.mock .tag{position:absolute;top:6px;right:10px;font-size:11px;color:#999;letter-spacing:.08em}
+.mock .from{text-align:center;color:#555;font-size:16px;margin-bottom:8px} .mock .from b{display:block;color:#111;font-size:19px}
+.mock .bub{background:#e5e5ea;border-radius:18px;padding:12px 16px;display:inline-block}
+.mock .mh{background:#f4f4f4;margin:-16px -16px 12px;padding:10px 16px;border-bottom:1px solid #ddd;font-size:16px;color:#444;border-radius:14px 14px 0 0}
+.mock .mbtn{display:inline-block;background:#1a7f37;color:#fff;font-weight:bold;padding:8px 18px;border-radius:8px;margin-top:10px;font-size:18px}
+.mock.popup{border:3px solid #c62828;text-align:center} .mock.popup .t{color:#c62828;font-weight:bold;font-size:26px}
+.mock .price{font-size:28px;font-weight:bold;margin:4px 0}
+.timer{font-family:var(--display);font-weight:700;font-size:40px;font-variant-numeric:tabular-nums}
+.hist{display:grid;gap:4px;font-size:15px}
+
 /* cards */
 .ups{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .card{border-radius:12px;border:2px solid var(--t);background:var(--tt);padding:14px;display:grid;gap:8px;min-width:0;align-content:start}
@@ -107,6 +134,7 @@ details summary{cursor:pointer}
     </div>
     <nav class="tabs" role="tablist" aria-label="Mode">
       <button role="tab" data-tab="draw" id="tab-draw">Draw</button>
+      <button role="tab" data-tab="alert" id="tab-alert">Alert</button>
       <button role="tab" data-tab="log" id="tab-log">Class Log</button>
       <button role="tab" data-tab="odds" id="tab-odds">Odds</button>
       <button role="tab" data-tab="student" id="tab-student">Student</button>
@@ -124,6 +152,20 @@ details summary{cursor:pointer}
       <p class="note">Pick a student to draw for them. A check means you've drawn for them this round.</p>
     </div>
     <div class="panel" aria-live="polite" id="turnBox"></div>
+  </section>
+
+  <!-- ALERT -->
+  <section id="view-alert" class="cols" hidden>
+    <div class="panel">
+      <h2 id="alertRoundTitle">Round 1 alert</h2>
+      <p class="note">One alert a round affects the whole class. Project it, run it, and students add it to their Life Event numbers.</p>
+      <button class="btn" id="aRandom" type="button">🎲 Random alert</button>
+      <div class="row"><button class="btn ghost small" data-atype="scam" type="button">🚨 Scam alert</button><button class="btn ghost small" data-atype="news" type="button">📰 News</button><button class="btn ghost small" data-atype="challenge" type="button">🏆 Challenge</button></div>
+      <div class="eyebrow">This period's alerts</div>
+      <div class="hist" id="alertHist"></div>
+      <p class="note">Alerts don't repeat until you've used every one of that kind.</p>
+    </div>
+    <div class="panel" id="alertBox" aria-live="polite"></div>
   </section>
 
   <!-- CLASS LOG -->
@@ -179,6 +221,7 @@ details summary{cursor:pointer}
         <li><b>Medical bills</b> show the full bill and what each health plan pays: Basic 30%, Standard 10%, Premium 2%. Students record the amount for their own plan.</li>
         <li>Protection and Keep cards show the <b>chance a matching Life Event comes up</b>, so students can make a smart choice.</li>
         <li>Dice are for the Life Choice Menu only, with up to 3 rolls a round.</li>
+        <li><b>Alert tab:</b> one alert a round for the whole class: a scam to vote on, a news event, or a quick challenge. Students add it to their Life Event numbers.</li>
         <li>Students draw on their own: share this page's link with <code>#student</code> on the end.</li>
       </ol>
       <p class="note">Draws come from the class code, the student's name and the round, so every screen shows the same cards. Click <b>+ Add a period</b> to set up another class, and switch with the Period menu at the top.</p>
@@ -402,6 +445,8 @@ function renderLog(){
 function logText(){
   const lines = ["Game of Life · "+(state.label||"")+" · Class "+state.cls+" · Round "+state.round, ""];
   const all = id => [ ...DATA.keep, ...DATA.use, ...DATA.protect ].find(x=>x.id===id);
+  const ah = (state.alertHist||[]).filter(h=>h.round===state.round).map(h=>{ const f=findAlert(h.id); return f ? (f.a.title||"Scam alert")+" ("+h.id+")" : h.id; });
+  if(ah.length) lines.push("Alert: "+ah.join(", "), "");
   for(const r of logRows()) lines.push([r.name, "Keep: "+r.d.keep.title, "Use Now: "+r.d.use.title, "Protection: "+r.d.prot.title, "Kept: "+(r.kept ? all(r.kept).title : "-"), "Life: "+r.d.life.title+" ("+lifeMoneyText(r.d.life)+", 😊"+fmtN(r.d.life.happy)+", 💚"+fmtN(r.d.life.health)+")", "Dice: "+r.dice.join("/")].join(" | "));
   return lines.join("\n");
 }
@@ -433,16 +478,86 @@ function studentDraw(){
   $("#sNote").textContent = "Drawing again shows the same cards. Your teacher's screen shows them too.";
 }
 
+
+// ---------- alerts ----------
+const ALERTS = DATA.alerts || null;
+const ATYPE = { scam:"🚨 Scam alert · Scam, trick or real?", news:"📰 News alert · affects everyone", challenge:"🏆 Class challenge" };
+const RIGHT = (ALERTS && ALERTS.right) || 25;
+let timerId = null;
+function findAlert(id){ if(!ALERTS) return null; for(const t of ["scam","news","challenge"]){ const a = (ALERTS[t]||[]).find(x=>x.id===id); if(a) return {type:t, a}; } return null; }
+function newAlert(type){
+  if(!ALERTS) return;
+  if(!type){ const r = Math.random(); type = r < 0.4 ? "scam" : r < 0.8 ? "news" : "challenge"; }
+  const pool = ALERTS[type] || []; if(!pool.length) return;
+  state.alertUsed = state.alertUsed || {}; let used = state.alertUsed[type] || [];
+  let left = pool.filter(a => !used.includes(a.id)); if(!left.length){ used = []; left = pool.slice(); }
+  const a = left[Math.floor(Math.random()*left.length)];
+  used.push(a.id); state.alertUsed[type] = used;
+  state.alertCur = { id:a.id, revealed:false, round:state.round };
+  state.alertHist = state.alertHist || []; state.alertHist.push({ round:state.round, id:a.id });
+  if(timerId){ clearInterval(timerId); timerId = null; }
+  savePeriods(); renderAlert();
+}
+function mockEl(a){
+  const tag = el("span",{class:"tag",text:"CLASS EXAMPLE"});
+  if(a.channel === "email") return el("div",{class:"mock"}, tag, el("div",{class:"mh"}, el("b",{text:"From: "}), a.from, el("br"), el("b",{text:"Subject: "}), a.subject||""), el("div",{text:a.body}));
+  if(a.channel === "popup") return el("div",{class:"mock popup"}, tag, el("div",{class:"t",text:a.title||""}), el("div",{text:a.body}), a.button ? el("span",{class:"mbtn",style:"background:#c62828",text:a.button}) : null);
+  if(a.channel === "ad") return el("div",{class:"mock"}, tag, el("div",{style:"font-weight:bold",text:a.title||""}), a.price ? el("div",{class:"price",text:a.price}) : null, el("div",{style:"color:#c62828",text:a.body}), a.button ? el("span",{class:"mbtn",text:a.button}) : null);
+  const label = a.channel === "dm" ? "Direct message" : "Text message";
+  return el("div",{class:"mock",style:"background:#f2f2f7"}, tag, el("div",{class:"from"}, el("b",{text:a.from||""}), label), el("div",{class:"bub",text:a.body}));
+}
+function timerEl(min){
+  if(!min) return null;
+  const box = el("div",{class:"row"}), t = el("span",{class:"timer",text:min+":00"}), b = el("button",{class:"btn ghost small",type:"button",text:"Start timer"});
+  b.addEventListener("click", ()=>{ if(timerId) clearInterval(timerId); let left = min*60; b.disabled = true;
+    timerId = setInterval(()=>{ left--; t.textContent = Math.floor(left/60)+":"+String(left%60).padStart(2,"0"); if(left<=0){ clearInterval(timerId); timerId=null; t.textContent = "Time!"; b.disabled = false; } }, 1000); });
+  box.append(t, b); return box;
+}
+function renderAlert(){
+  $("#alertRoundTitle").textContent = "Round " + state.round + " alert";
+  const box = $("#alertBox"); box.textContent = "";
+  const hist = $("#alertHist"); hist.textContent = "";
+  (state.alertHist||[]).slice(-10).reverse().forEach(h => { const f = findAlert(h.id); hist.append(el("div",{}, el("b",{text:"Round "+h.round+": "}), f ? (f.a.title || ({scam:"Scam alert",real:"Scam alert"}[f.type]) || f.a.id) + " · " + f.a.id : h.id)); });
+  if(!hist.children.length) hist.append(el("span",{class:"muted",text:"None yet."}));
+  if(!ALERTS){ box.append(el("h2",{text:"No alerts in cards.js yet"}), el("p",{class:"muted",text:"Upload the newest cards.js file (the one with the \"alerts\" section) to GitHub, then refresh."})); return; }
+  const cur = state.alertCur, f = cur && findAlert(cur.id);
+  if(!f){ box.append(el("p",{class:"muted",style:"margin:0",text:"Click Random alert, or pick a kind. Then project this screen."})); return; }
+  const {type, a} = f;
+  const card = el("div",{class:"alert a-"+type}, el("div",{class:"kind",text:ATYPE[type]}));
+  if(cur.round !== state.round) card.append(el("p",{class:"note",text:"This alert was drawn in Round "+cur.round+"."}));
+  if(type === "scam"){
+    card.append(mockEl(a), el("div",{class:"big",text:"Everyone vote at the same time:"}), el("div",{class:"vote"}, el("span",{text:"Scam"}), el("span",{text:"Trick"}), el("span",{text:"Real"})));
+    if(!cur.revealed){ const b = el("button",{class:"btn",type:"button",text:"Reveal the answer"}); b.addEventListener("click", ()=>{ cur.revealed = true; savePeriods(); renderAlert(); }); card.append(b); }
+    else {
+      const word = {scam:"SCAM",trick:"SPENDING TRICK",real:"REAL"}[a.answer];
+      card.append(el("div",{class:"answer "+a.answer,text:"It's "+(a.answer==="real"?"":"a ")+word+(a.answer==="real"?"!":".")}));
+      if(a.clues) card.append(el("div",{}, el("b",{text:"Clues: "}), a.clues.join(" · ")));
+      if(a.why) card.append(el("div",{}, el("b",{text:"How you can tell: "}), a.why));
+      const wrong = a.answer === "real" ? el("div",{}, "Called it a scam (ignored it)", el("b",{text:fmt$(a.missed||0)})) : el("div",{}, "Fell for it", el("b",{text:fmt$(a.fooled||0)}));
+      card.append(el("div",{class:"score"}, el("div",{}, "Got it right", el("b",{text:fmt$(RIGHT)})), wrong));
+      if(a.answer !== "real") card.append(el("p",{class:"note",text:"Fell for it but have a Money & Scams Protection card? Use it to lose less."}));
+    }
+  } else if(type === "news"){
+    card.append(el("h3",{text:a.title}), el("div",{class:"big",text:a.text}), strip(a));
+    if(a.cat) card.append(el("div",{}, "Category: ", catPill(a.cat)));
+    if(a.cat && a.kind === "bad") card.append(el("p",{class:"note",text:"Have a Protection card that covers "+a.cat+"? Use it now."}));
+  } else {
+    card.append(el("h3",{text:a.title}), el("div",{class:"big",text:a.text}), el("div",{class:"big"}, el("b",{text:"Reward: "}), a.reward), timerEl(a.time));
+  }
+  card.append(el("p",{class:"note",text:"Tracker: add these numbers to your Life Event row this round."}));
+  box.append(card);
+}
+
 // ---------- tabs / setup ----------
 function showTab(t){
-  for(const v of ["draw","log","odds","student","setup"]){ $("#view-"+v).hidden = v!==t; $("#tab-"+v).setAttribute("aria-selected", String(v===t)); }
+  for(const v of ["draw","alert","log","odds","student","setup"]){ $("#view-"+v).hidden = v!==t; $("#tab-"+v).setAttribute("aria-selected", String(v===t)); }
   if(!studentOnly) store.set("tab", t);
   if(t==="log") renderLog();
 }
 function fillPeriodSel(){ const sel = $("#periodSel"); sel.textContent = ""; periods.forEach((p,i)=> sel.append(el("option",{value:String(i),text:p.label || ("Period "+(i+1))}))); sel.value = String(active); }
 function loadSetupFields(){ $("#tLabel").value = state.label || ""; $("#tClass").value = state.cls; $("#tRound").value = state.round; $("#tRoster").value = state.roster.join("\n"); $("#saveNote").textContent = ""; $("#delNote").textContent = ""; }
 function switchPeriod(i){ active = i; state = periods[active]; current = null; revealed = false; savePeriods(); fillPeriodSel(); loadSetupFields(); renderAll(); }
-function renderAll(){ renderHeader(); renderRoster(); renderTurn(); renderLog(); renderOdds(); }
+function renderAll(){ renderHeader(); renderRoster(); renderTurn(); renderLog(); renderOdds(); renderAlert(); }
 
 function init(){
   for(const sel of ["#tRound","#sRound"]){ const s=$(sel); for(let i=1;i<=MAX_ROUND;i++) s.append(el("option",{value:String(i),text:"Round "+i})); }
@@ -472,10 +587,12 @@ function init(){
     try{ navigator.clipboard.writeText(txt).then(()=>{ note.textContent = "Copied. Paste it into a doc or spreadsheet."; }, fallback); }catch(e){ fallback(); }
   });
   $("#sDraw").addEventListener("click", studentDraw);
-  if(studentOnly){ ["draw","log","setup"].forEach(t=>$("#tab-"+t).hidden=true); ["#roundChip","#classChip","#periodWrap"].forEach(s=>$(s).hidden=true); showTab("student"); }
+  $("#aRandom").addEventListener("click", ()=>newAlert());
+  document.querySelectorAll("[data-atype]").forEach(b=>b.addEventListener("click",()=>newAlert(b.dataset.atype)));
+  if(studentOnly){ ["draw","alert","log","setup"].forEach(t=>$("#tab-"+t).hidden=true); ["#roundChip","#classChip","#periodWrap"].forEach(s=>$(s).hidden=true); showTab("student"); }
   else showTab(store.get("tab", state.cls ? "draw" : "setup"));
   renderAll();
 }
 init();
 </script>
-</body></html>
+</html>
