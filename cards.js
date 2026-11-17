@@ -230,5 +230,75 @@ window.CARDS = {
   {"id": "U39", "title": "Coupon app", "text": "Digital coupons cut your grocery bill this week.", "money": 25, "happy": 0, "health": 0},
   {"id": "U40", "title": "Return unused gear", "text": "You return workout gear you never opened.", "money": 45, "happy": 0, "health": 0},
   {"id": "U41", "title": "Call your phone company", "text": "You ask for a better deal and get a discount this month.", "money": 30, "happy": 0, "health": 0}
+],
+// ---------------- ALERTS (the Alert tab: one per round, affects the whole class) ----------------
+// scam:  answer = "scam", "trick" or "real". fooled = what you lose if you fall for a scam or trick.
+//        missed = what you lose if you call a REAL message a scam. Everyone who answers right gets "right".
+// news:  everyone gets money / happy / health. cat (optional) lets matching Protection cards help.
+// challenge: a quick class task. time = minutes on the timer.
+"alerts": {
+"right": 25,
+"scam": [
+  {"id": "SA1", "answer": "scam", "channel": "text", "from": "+1 (360) 555-0198", "body": "I-5 Bridge Toll Services: You have an UNPAID toll of $6.85. Pay within 24 hours to avoid a $50 late fee: http://i5-tollpay-now.co", "clues": ["Pretends to be someone you trust", "A problem", "Rushes you", "Tolls on the I-5 bridge haven't started yet!"], "fooled": -150},
+  {"id": "SA2", "answer": "scam", "channel": "text", "from": "+1 (971) 555-0144", "body": "Hey it's me!! I dropped my phone so this is my new number. Can you send me a $200 gift card? I need it tonight. Please don't tell anyone.", "clues": ["Pretends to be someone you trust", "Strange way to pay (gift card)", "Rushes you", "Asks you to keep it secret"], "fooled": -200},
+  {"id": "SA3", "answer": "scam", "channel": "email", "from": "Hiring Team <jobs.offer2026@freemail.net>", "subject": "You're HIRED: $45/hour from home!", "body": "No interview needed! To start, buy your work laptop with gift cards and text us the codes. We'll pay you back in your first check.", "clues": ["A prize (a job you never applied for)", "Strange way to pay (gift cards)", "Free email address, not a company"], "fooled": -300},
+  {"id": "SA4", "answer": "scam", "channel": "email", "from": "FreshMart Rewards <winner@freshmart-prizes.biz>", "subject": "You WON a $500 gift card!", "body": "You were randomly chosen! Just pay $4.99 shipping to claim your prize. Offer expires in 1 hour.", "clues": ["A prize you didn't enter for", "Rushes you", "You have to pay to get something free"], "fooled": -60},
+  {"id": "SA5", "answer": "scam", "channel": "text", "from": "+1 (564) 555-0110", "body": "Postal Notice: Your package could not be delivered. Update your address and pay a $1.99 fee: http://pkg-redeliver.info", "clues": ["Pretends to be someone you trust", "A problem", "Weird link", "Were you even expecting a package?"], "fooled": -120},
+  {"id": "SA6", "answer": "scam", "channel": "popup", "title": "⚠️ VIRUS DETECTED!", "body": "Your computer is infected with 5 viruses. Do NOT close this window. Call Tech Support now at 1-888-555-0177.", "button": "CALL NOW", "clues": ["A problem", "Rushes you", "Real security software never asks you to call a number"], "fooled": -250},
+  {"id": "SA7", "answer": "scam", "channel": "text", "from": "+1 (360) 555-0163", "body": "ALERT: Unusual sign-in on your bank account. Your account is LOCKED. Verify now: http://secure-bank-verify.net", "clues": ["Pretends to be your bank", "A problem", "Rushes you", "Weird link"], "fooled": -400},
+  {"id": "SA8", "answer": "scam", "channel": "dm", "from": "@glowup.brand.official", "body": "Congrats!! You've been picked to be a brand ambassador 🌟 Just pay $49 for your starter kit and start earning!", "clues": ["A prize", "You pay to get a 'job'", "You never applied"], "fooled": -50},
+  {"id": "SA9", "answer": "scam", "channel": "email", "from": "Loan Relief Center <help@loan-forgive-now.org>", "subject": "Your student loans can be FORGIVEN today", "body": "Act today! Pay a $99 processing fee and we'll erase your student loans.", "clues": ["A prize", "Rushes you", "Real loan help is free"], "fooled": -100},
+  {"id": "SA10", "answer": "scam", "channel": "text", "from": "+1 (503) 555-0182", "body": "Sorry, wrong number! 😅 By the way, I made $3,000 last week trading crypto. Want me to show you how?", "clues": ["A stranger becomes your 'friend'", "A prize (easy money)", "Strange way to pay (crypto)"], "fooled": -500},
+  {"id": "SA11", "answer": "scam", "channel": "text", "from": "Buyer for your couch", "body": "I'll buy your couch! First I need to make sure you're real. Text me the 6-digit code you're about to get.", "clues": ["Asks for a login code", "Rushes you", "Never share a code someone else sends you"], "fooled": -100},
+  {"id": "ST1", "answer": "trick", "channel": "ad", "title": "Street Runner Sneakers", "price": "$89.99", "body": "⏰ SALE ENDS IN 04:59 · 🔥 Only 2 left! 37 people are looking at this", "button": "BUY NOW", "clues": ["Rushes you (countdown timer)", "'Only 2 left' pressure"], "fooled": -90},
+  {"id": "ST2", "answer": "trick", "channel": "ad", "title": "Checkout", "price": "Total: $74.97", "body": "Wireless Earbuds $49.99 · ☑ 2-Year Protection Plan $14.99 · ☑ VIP Club $9.99/month", "button": "PLACE ORDER", "clues": ["Hidden cost (pre-checked boxes)"], "fooled": -25},
+  {"id": "ST3", "answer": "trick", "channel": "ad", "title": "StreamMax: FREE for 7 days!", "price": "$0 today", "body": "Card required. Renews automatically at $17.99/month until you cancel.", "button": "START FREE TRIAL", "clues": ["Hidden cost (free trial turns paid)", "Tiny print"], "fooled": -18},
+  {"id": "ST4", "answer": "trick", "channel": "ad", "title": "FlexFit Gym: Only $5 a week!", "price": "$5/week", "body": "*12-month contract. $99 sign-up fee. $49 yearly fee.", "button": "JOIN TODAY", "clues": ["Hidden cost (fees in the tiny print)", "Contract you can't easily leave"], "fooled": -99},
+  {"id": "ST5", "answer": "trick", "channel": "ad", "title": "Gaming Headset", "price": "4 easy payments of $50", "body": "Buy now, pay later! Late payments: $10 fee each.", "button": "PAY LATER", "clues": ["Makes $200 feel small", "Hidden cost (late fees)"], "fooled": -40},
+  {"id": "ST6", "answer": "trick", "channel": "ad", "title": "Your cart: $42", "price": "Spend $8 more for FREE shipping!", "body": "Shipping is $5.99. Add one more item to save!", "button": "KEEP SHOPPING", "clues": ["Gets you to spend more to 'save'"], "fooled": -15},
+  {"id": "ST7", "answer": "trick", "channel": "popup", "title": "🔥 LIMITED BUNDLE 🔥", "body": "1,200 gems + rare skin. 80% OFF! Only available for the next 10 minutes.", "button": "$19.99 BUY", "clues": ["Rushes you", "Fake 'percent off'", "Game money hides the real cost"], "fooled": -20},
+  {"id": "SR1", "answer": "real", "channel": "text", "from": "Smile Dental", "body": "Reminder of your cleaning on Tue at 3:30 PM. Reply C to confirm or call our office to reschedule.", "why": "You made this appointment. No link, no money, no rush.", "missed": -35},
+  {"id": "SR2", "answer": "real", "channel": "email", "from": "Orders <orders@rivertrailgear.com>", "subject": "Your order has shipped", "body": "Your rain jacket shipped today and should arrive Thursday. Track it by logging in to your account on our website.", "why": "You ordered it. It tells you to log in yourself, not click a strange link.", "missed": -25},
+  {"id": "SR3", "answer": "real", "channel": "text", "from": "Bus Alerts", "body": "Route 4 is detoured today because of construction on Fourth Plain. Check the route map for stop changes.", "why": "You signed up for these alerts. It doesn't ask for anything.", "missed": -40},
+  {"id": "SR4", "answer": "real", "channel": "text", "from": "Manager Dana", "body": "Hi! Can you cover a shift Saturday 9 to 3? Let me know by Thursday.", "why": "A saved contact you know. No money, no link, plenty of time to answer.", "missed": -60},
+  {"id": "SR5", "answer": "real", "channel": "email", "from": "Your power company", "subject": "Your bill is ready", "body": "Your bill of $84 is ready. Log in to your account to pay by Dec 10. We will never ask you to pay with a gift card.", "why": "A normal bill with a due date weeks away. It tells you to log in yourself.", "missed": -25},
+  {"id": "SR6", "answer": "real", "channel": "text", "from": "Your bank", "body": "Your login code is 482913. Don't share this code with anyone. We will never call you to ask for it.", "why": "You just tried to log in, so you expected this code. Keep it to yourself!", "missed": -10},
+  {"id": "SR7", "answer": "real", "channel": "text", "from": "Pharmacy", "body": "Your prescription is ready for pickup. Store hours 9 AM to 9 PM.", "why": "You ordered it. Nothing to click and nothing to pay by text.", "missed": -20},
+  {"id": "SR8", "answer": "real", "channel": "email", "from": "Library", "subject": "Your hold is ready", "body": "The book you requested is ready at the front desk. We'll keep it for 7 days.", "why": "You asked for this book. Free, no link, no rush.", "missed": -10}
+],
+"news": [
+  {"id": "N1", "cat": "Transportation", "kind": "bad", "title": "Gas prices jump", "text": "Gas goes up 50 cents a gallon. Bus fares stay the same, but rides cost more for everyone else.", "money": -40, "happy": 0, "health": 0},
+  {"id": "N2", "cat": "Home", "kind": "bad", "title": "Rents go up in Vancouver", "text": "Landlords across town raise rents this month.", "money": -75, "happy": -1, "health": 0},
+  {"id": "N3", "cat": "Home", "kind": "bad", "title": "Heat wave", "text": "Five days over 100 degrees. Fans and AC run all week.", "money": -30, "happy": 0, "health": -1},
+  {"id": "N4", "cat": "Home", "kind": "bad", "title": "Ice storm", "text": "The power is out for two days and your food spoils.", "money": -60, "happy": -1, "health": 0},
+  {"id": "N5", "kind": "bad", "title": "Wildfire smoke week", "text": "Smoke fills the sky. Everyone stays inside.", "money": 0, "happy": -1, "health": -1},
+  {"id": "N6", "kind": "bad", "title": "Grocery prices go up", "text": "Eggs, milk and bread all cost more this month.", "money": -40, "happy": 0, "health": 0},
+  {"id": "N7", "cat": "Money & Scams", "kind": "bad", "title": "Data breach", "text": "Hackers steal card numbers from a big store. Someone uses yours, and you spend hours fixing it.", "money": -50, "happy": -1, "health": 0},
+  {"id": "N8", "cat": "Job", "kind": "good", "title": "Pay bump", "text": "Washington's minimum wage goes up in January, and many jobs raise pay.", "money": 50, "happy": 1, "health": 0},
+  {"id": "N9", "cat": "Job", "kind": "good", "title": "Holiday bonus", "text": "Businesses had a great year and share it with workers.", "money": 100, "happy": 1, "health": 0},
+  {"id": "N10", "cat": "Job", "kind": "bad", "title": "Hours cut across town", "text": "Business is slow, and lots of companies cut hours this month.", "money": -150, "happy": -1, "health": 0},
+  {"id": "N11", "kind": "good", "title": "Tax refund season", "text": "Everyone who filed early gets money back.", "money": 150, "happy": 1, "health": 0},
+  {"id": "N12", "kind": "good", "title": "Free festival downtown", "text": "Music, food trucks and lights at Esther Short Park. Entry is free.", "money": 0, "happy": 2, "health": 0},
+  {"id": "N13", "cat": "Transportation", "kind": "bad", "title": "Bridge traffic jam", "text": "A bridge lift backs up I-5 for hours. Everyone is late.", "money": -20, "happy": -1, "health": 0},
+  {"id": "N14", "kind": "bad", "title": "Flu season", "text": "Half the town is sick. You feel run down too.", "money": 0, "happy": 0, "health": -1},
+  {"id": "N15", "kind": "good", "title": "Savings rates go up", "text": "Banks pay more interest on savings this month.", "money": 25, "happy": 0, "health": 0},
+  {"id": "N16", "kind": "bad", "title": "Streaming prices go up", "text": "Every streaming service raises its price.", "money": -10, "happy": 0, "health": 0},
+  {"id": "N17", "kind": "good", "title": "Perfect weekend", "text": "Sunshine and 75 degrees. Everyone gets outside.", "money": 0, "happy": 1, "health": 1},
+  {"id": "N18", "cat": "Transportation", "kind": "bad", "title": "Car insurance goes up", "text": "Insurance companies raise rates in Washington.", "money": -30, "happy": 0, "health": 0}
+],
+"challenge": [
+  {"id": "C1", "title": "Price is Right", "text": "Your teacher names something real (a used car, a month of rent, a gym membership). Write your best guess for the price.", "reward": "Closest guess: +$100", "time": 2},
+  {"id": "C2", "title": "Cut It", "text": "Find $50 you could cut from your tracker. Show a partner how.", "reward": "If it works: +$50", "time": 5},
+  {"id": "C3", "title": "Paycheck Math Race", "text": "A job pays $42,000 a year. What is the monthly pay? What is 30% of it for rent?", "reward": "First 5 correct: +$50", "time": 3},
+  {"id": "C4", "title": "Grocery Showdown", "text": "In pairs, plan one full day of meals for under $12 using a store website.", "reward": "Under budget: +$40 each", "time": 8},
+  {"id": "C5", "title": "30-Second Pitch", "text": "Convince a partner your character's career is the best one in the room.", "reward": "Convincing pitch: +1 😊 for both", "time": 3},
+  {"id": "C6", "title": "Compliment Chain", "text": "Write one specific compliment about a classmate's work or choices this week.", "reward": "Giver and receiver: +1 😊", "time": 3},
+  {"id": "C7", "title": "Interview Speed Round", "text": "Answer 'Tell me about yourself' in 30 seconds with eye contact.", "reward": "+1 😊", "time": 4},
+  {"id": "C8", "title": "Move Break", "text": "Stand up for a 3-minute stretch or a walk around the room.", "reward": "Everyone who joins: +1 💚", "time": 3},
+  {"id": "C9", "title": "Healthy Swap", "text": "Name 3 cheaper, healthier swaps for fast food.", "reward": "+1 💚", "time": 3},
+  {"id": "C10", "title": "Sleep Math", "text": "Your character starts work at 6 AM and needs 8 hours of sleep and 45 minutes to get ready and commute. What time is bedtime?", "reward": "Correct: +1 💚", "time": 2},
+  {"id": "C11", "title": "No-Spend Round", "text": "Skip any spending this round (no Use Now card that costs money).", "reward": "If you do it: +$100", "time": 0},
+  {"id": "C12", "title": "Budget Bowl", "text": "Teams answer 5 quick questions about taxes, scams, insurance and budgets.", "reward": "Winning team: +$100 and +1 😊 each", "time": 8}
 ]
+}
 };
